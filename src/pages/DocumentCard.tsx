@@ -1,11 +1,126 @@
 import { useParams, Link } from 'react-router-dom';
-import { useContext, useState } from 'react';
+import { useContext, useState, useRef } from 'react';
 import { AppContext, DocStatus } from '../App';
+import { saveFile, getDocumentFiles, downloadFile, deleteFile, formatFileSize, getFileIcon, StoredFile } from '../utils/storage';
 import {
   ArrowLeft, FileText, CheckCircle2, XCircle, Download,
   Send, MessageSquare, Printer, Calendar, Paperclip,
-  ChevronRight, Stamp, Check, Clock
+  ChevronRight, Stamp, Check, Clock, Upload, Trash2
 } from 'lucide-react';
+
+// Компонент вкладки файлов с реальным хранилищем
+function FilesTab({ docId }: { docId: string }) {
+  const [files, setFiles] = useState<StoredFile[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Загрузка файлов при монтировании
+  useState(() => {
+    getDocumentFiles(docId).then(setFiles);
+  });
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const fileList = e.target.files;
+    if (!fileList || fileList.length === 0) return;
+
+    setUploading(true);
+    try {
+      for (let i = 0; i < fileList.length; i++) {
+        await saveFile(docId, fileList[i]);
+      }
+      const updatedFiles = await getDocumentFiles(docId);
+      setFiles(updatedFiles);
+    } catch (error) {
+      console.error('Ошибка загрузки файла:', error);
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleDownload = async (fileId: string) => {
+    try {
+      await downloadFile(fileId);
+    } catch (error) {
+      console.error('Ошибка скачивания:', error);
+    }
+  };
+
+  const handleDelete = async (fileId: string) => {
+    if (!confirm('Удалить файл?')) return;
+    try {
+      await deleteFile(fileId);
+      const updatedFiles = await getDocumentFiles(docId);
+      setFiles(updatedFiles);
+    } catch (error) {
+      console.error('Ошибка удаления:', error);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Upload area */}
+      <div
+        onClick={() => fileInputRef.current?.click()}
+        className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50/50 transition"
+      >
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          onChange={handleUpload}
+          className="hidden"
+        />
+        {uploading ? (
+          <div className="flex flex-col items-center">
+            <div className="w-10 h-10 border-3 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-3"></div>
+            <p className="text-sm text-gray-600">Загрузка...</p>
+          </div>
+        ) : (
+          <>
+            <Upload size={32} className="mx-auto text-gray-400 mb-2" />
+            <p className="text-sm text-gray-600 font-medium">Нажмите для загрузки файлов</p>
+            <p className="text-xs text-gray-400 mt-1">PDF, DOC, DOCX, XLS, JPG, PNG до 50 МБ</p>
+          </>
+        )}
+      </div>
+
+      {/* Files list */}
+      {files.length > 0 && (
+        <div className="space-y-2">
+          <h4 className="text-sm font-semibold text-gray-700">Загруженные файлы ({files.length})</h4>
+          {files.map(file => (
+            <div key={file.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition">
+              <span className="text-2xl">{getFileIcon(file.type)}</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
+                <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
+              </div>
+              <button
+                onClick={() => handleDownload(file.id)}
+                className="w-8 h-8 rounded-lg bg-blue-100 hover:bg-blue-200 flex items-center justify-center transition"
+                title="Скачать"
+              >
+                <Download size={14} className="text-blue-600" />
+              </button>
+              <button
+                onClick={() => handleDelete(file.id)}
+                className="w-8 h-8 rounded-lg bg-red-50 hover:bg-red-100 flex items-center justify-center transition"
+                title="Удалить"
+              >
+                <Trash2 size={14} className="text-red-500" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {files.length === 0 && !uploading && (
+        <p className="text-center text-sm text-gray-400 py-4">Файлы не загружены</p>
+      )}
+    </div>
+  );
+}
 
 const STATUS_CONFIG: Record<DocStatus, { label: string; color: string; bg: string; icon: any }> = {
   draft: { label: 'Черновик', color: 'text-gray-600', bg: 'bg-gray-100', icon: FileText },
@@ -255,20 +370,7 @@ export default function DocumentCard() {
             </div>
           )}
 
-          {tab === 'files' && (
-            <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
-              <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
-                <Paperclip size={20} className="text-blue-600" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-900">{doc.fileName}</p>
-                <p className="text-xs text-gray-500">{fmtSize(doc.fileSize)}</p>
-              </div>
-              <button className="btn-primary px-4 py-2 rounded-xl text-white text-sm font-medium flex items-center gap-2">
-                <Download size={16} /> {t('doc.download')}
-              </button>
-            </div>
-          )}
+          {tab === 'files' && <FilesTab docId={doc.id} />}
         </div>
       </div>
     </div>
