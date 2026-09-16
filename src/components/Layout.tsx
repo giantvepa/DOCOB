@@ -1,177 +1,210 @@
-import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useContext, useState } from 'react';
 import { AppContext } from '../App';
 import {
-  LayoutDashboard, FileText, CheckSquare, Users, Calendar,
-  BookOpen, BarChart3, Settings, Bell, Menu, X, Search,
-  ChevronDown, LogOut, Inbox, Send, Building2
+  Inbox, Send, FileText, FolderOpen, Archive, Trash2,
+  CheckSquare, Calendar, Users, BarChart3, Settings,
+  ChevronRight, ChevronDown, Search, Bell, Plus,
+  Save, Printer, Mail, Star, AlertCircle, HelpCircle,
+  Menu, X, Home
 } from 'lucide-react';
+
+interface TreeNode {
+  id: string;
+  label: string;
+  icon: any;
+  path?: string;
+  badge?: number;
+  children?: TreeNode[];
+}
 
 export default function Layout() {
   const { currentUser, documents, tasks } = useContext(AppContext);
   const location = useLocation();
-  const navigate = useNavigate();
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({ docs: true, refs: false, sys: false });
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [profileOpen, setProfileOpen] = useState(false);
 
-  const pendingDocs = documents.filter(d => d.status === 'on_approval').length;
-  const myTasks = tasks.filter(t => t.assigneeId === currentUser.id && t.status !== 'completed').length;
+  const incomingCount = documents.filter(d => d.type === 'incoming').length;
+  const outgoingCount = documents.filter(d => d.type === 'outgoing').length;
+  const internalCount = documents.filter(d => d.type === 'internal').length;
+  const draftCount = documents.filter(d => d.status === 'draft').length;
+  const pendingCount = documents.filter(d => d.status === 'on_approval').length;
+  const myTasksCount = tasks.filter(t => t.assigneeId === currentUser.id && t.status !== 'completed').length;
 
-  const NAV = [
-    { path: '/', icon: LayoutDashboard, label: 'Главная', badge: null },
-    { path: '/documents', icon: FileText, label: 'Документы', badge: pendingDocs },
-    { path: '/tasks', icon: CheckSquare, label: 'Задачи', badge: myTasks },
-    { path: '/meetings', icon: Calendar, label: 'Совещания', badge: null },
-    { path: '/registry', icon: BookOpen, label: 'Канцелярия', badge: null },
-    { path: '/employees', icon: Users, label: 'Сотрудники', badge: null },
-    { path: '/reports', icon: BarChart3, label: 'Отчёты', badge: null },
+  const toggle = (id: string) => setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
+
+  const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/');
+
+  const tree: TreeNode[] = [
+    {
+      id: 'docs', label: 'Документы', icon: FolderOpen, children: [
+        { id: 'incoming', label: `Входящие (${incomingCount})`, icon: Inbox, path: '/documents?type=incoming' },
+        { id: 'outgoing', label: `Исходящие (${outgoingCount})`, icon: Send, path: '/documents?type=outgoing' },
+        { id: 'internal', label: `Внутренние (${internalCount})`, icon: FileText, path: '/documents?type=internal' },
+        { id: 'drafts', label: `Черновики (${draftCount})`, icon: FileText, path: '/documents?status=draft' },
+        { id: 'pending', label: `На согласовании (${pendingCount})`, icon: AlertCircle, path: '/documents?status=on_approval' },
+        { id: 'all_docs', label: 'Все документы', icon: FolderOpen, path: '/documents' },
+        { id: 'archived', label: 'Архив', icon: Archive, path: '/documents?status=archived' },
+      ]
+    },
+    { id: 'tasks', label: `Задачи (${myTasksCount})`, icon: CheckSquare, path: '/tasks' },
+    { id: 'meetings', label: 'Совещания', icon: Calendar, path: '/meetings' },
+    { id: 'registry', label: 'Канцелярия', icon: Mail, path: '/registry' },
+    {
+      id: 'refs', label: 'Справочники', icon: FolderOpen, children: [
+        { id: 'employees', label: 'Сотрудники', icon: Users, path: '/employees' },
+        { id: 'org', label: 'Организации', icon: Users, path: '/employees' },
+      ]
+    },
+    { id: 'reports', label: 'Отчёты', icon: BarChart3, path: '/reports' },
+    {
+      id: 'sys', label: 'Администрирование', icon: Settings, children: [
+        { id: 'settings', label: 'Настройки', icon: Settings, path: '/reports' },
+      ]
+    },
   ];
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) navigate(`/documents?q=${encodeURIComponent(searchQuery)}`);
+  const renderNode = (node: TreeNode, depth = 0) => {
+    const hasChildren = node.children && node.children.length > 0;
+    const isExpanded = expanded[node.id];
+    const active = node.path ? isActive(node.path) : false;
+
+    return (
+      <div key={node.id}>
+        <div
+          onClick={() => {
+            if (hasChildren) toggle(node.id);
+          }}
+          className={`flex items-center gap-1.5 py-[5px] pr-2 cursor-pointer text-[12px] transition-colors group ${
+            active ? 'bg-blue-100 text-blue-800 font-medium' : 'text-slate-700 hover:bg-slate-100'
+          }`}
+          style={{ paddingLeft: `${depth * 14 + 6}px` }}
+        >
+          {hasChildren ? (
+            isExpanded ? <ChevronDown size={12} className="text-slate-400 flex-shrink-0" /> : <ChevronRight size={12} className="text-slate-400 flex-shrink-0" />
+          ) : (
+            <span className="w-3 flex-shrink-0" />
+          )}
+          <node.icon size={13} className={active ? 'text-blue-600' : 'text-slate-400'} />
+          {node.path ? (
+            <Link to={node.path} className="flex-1 truncate" onClick={(e) => e.stopPropagation()}>
+              {node.label}
+            </Link>
+          ) : (
+            <span className="flex-1 truncate">{node.label}</span>
+          )}
+        </div>
+        {hasChildren && isExpanded && node.children!.map(child => renderNode(child, depth + 1))}
+      </div>
+    );
   };
 
   return (
-    <div className="min-h-screen bg-[#f0f2f5] flex">
-      {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-60 bg-[#1a3a5c] text-white transform transition-transform duration-300 lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        {/* Logo */}
-        <div className="h-14 flex items-center gap-2.5 px-4 border-b border-white/10 bg-[#15304d]">
-          <div className="w-8 h-8 rounded bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
-            <Building2 size={16} />
-          </div>
-          <div>
-            <h1 className="text-sm font-bold tracking-tight leading-none">СЭД ТЕЗИС</h1>
-            <p className="text-[9px] text-blue-300/70 leading-none mt-0.5">Документооборот</p>
-          </div>
-        </div>
-
-        {/* Nav */}
-        <nav className="p-2 space-y-0.5 mt-1">
-          {NAV.map(item => {
-            const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                onClick={() => setSidebarOpen(false)}
-                className={`flex items-center gap-2.5 px-3 py-2 rounded text-[13px] transition-all ${
-                  isActive
-                    ? 'bg-white/15 text-white font-medium'
-                    : 'text-blue-100/80 hover:bg-white/8 hover:text-white'
-                }`}
-              >
-                <item.icon size={16} />
-                <span className="flex-1">{item.label}</span>
-                {item.badge && item.badge > 0 && (
-                  <span className="px-1.5 py-0.5 text-[10px] font-bold bg-red-500 text-white rounded min-w-[18px] text-center">
-                    {item.badge}
-                  </span>
-                )}
-              </Link>
-            );
-          })}
-        </nav>
-
-        {/* User */}
-        <div className="absolute bottom-0 left-0 right-0 p-3 border-t border-white/10 bg-[#15304d]">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-blue-500/30 flex items-center justify-center text-sm">
-              {currentUser.avatar}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium truncate">{currentUser.name.split(' ').slice(0, 2).join(' ')}</p>
-              <p className="text-[10px] text-blue-200/60 truncate">{currentUser.position}</p>
-            </div>
-          </div>
-        </div>
-      </aside>
-
-      {/* Overlay */}
-      {sidebarOpen && (
-        <div className="fixed inset-0 bg-black/40 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
-      )}
-
-      {/* Main */}
-      <div className="flex-1 lg:ml-60 flex flex-col min-h-screen">
-        {/* Top bar */}
-        <header className="sticky top-0 z-30 h-14 bg-white border-b border-slate-200 flex items-center px-4 gap-3 shadow-sm">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="lg:hidden w-8 h-8 rounded hover:bg-slate-100 flex items-center justify-center"
-          >
-            <Menu size={18} />
+    <div className="h-screen flex flex-col bg-[#f0f0f0] overflow-hidden">
+      {/* ===== TOP TOOLBAR ===== */}
+      <div className="bg-gradient-to-b from-[#3b6ea5] to-[#2d5986] text-white flex-shrink-0">
+        {/* Title bar */}
+        <div className="flex items-center h-8 px-3 border-b border-white/10 text-[11px]">
+          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="lg:hidden mr-2">
+            <Menu size={14} />
           </button>
-
-          {/* Search */}
-          <form onSubmit={handleSearch} className="flex-1 max-w-md">
-            <div className="relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Поиск документов, задач..."
-                className="w-full h-8 pl-9 pr-3 bg-slate-50 border border-slate-200 rounded text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
-              />
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded bg-white/20 flex items-center justify-center">
+              <FileText size={10} />
             </div>
-          </form>
-
-          {/* Quick actions */}
-          <div className="hidden md:flex items-center gap-1.5">
-            <Link to="/documents?type=incoming" className="flex items-center gap-1 h-8 px-2.5 text-[11px] text-slate-600 hover:bg-slate-100 rounded transition">
-              <Inbox size={13} /> Входящие
-            </Link>
-            <Link to="/documents?type=outgoing" className="flex items-center gap-1 h-8 px-2.5 text-[11px] text-slate-600 hover:bg-slate-100 rounded transition">
-              <Send size={13} /> Исходящие
-            </Link>
+            <span className="font-semibold tracking-wide">СЭД ТЕЗИС</span>
+            <span className="text-white/50">— Организация: ООО «Демо-Предприятие»</span>
           </div>
+          <div className="ml-auto flex items-center gap-3 text-white/70">
+            <span>{currentUser.name}</span>
+            <span className="text-white/40">|</span>
+            <span>{new Date().toLocaleDateString('ru-RU')}</span>
+          </div>
+        </div>
 
-          {/* Right actions */}
-          <div className="flex items-center gap-1.5 ml-auto">
-            <button className="relative w-8 h-8 rounded hover:bg-slate-100 flex items-center justify-center">
-              <Bell size={16} className="text-slate-600" />
-              {(pendingDocs + myTasks) > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
-                  {pendingDocs + myTasks}
-                </span>
-              )}
-            </button>
+        {/* Action toolbar */}
+        <div className="flex items-center h-9 px-2 gap-0.5">
+          <Link to="/" className="flex items-center gap-1 px-2 py-1 text-[11px] hover:bg-white/10 rounded transition">
+            <Home size={12} /> Главная
+          </Link>
+          <div className="w-px h-5 bg-white/20 mx-1" />
+          <button className="flex items-center gap-1 px-2 py-1 text-[11px] hover:bg-white/10 rounded transition">
+            <Plus size={12} /> Создать
+          </button>
+          <button className="flex items-center gap-1 px-2 py-1 text-[11px] hover:bg-white/10 rounded transition">
+            <Save size={12} /> Сохранить
+          </button>
+          <button className="flex items-center gap-1 px-2 py-1 text-[11px] hover:bg-white/10 rounded transition">
+            <Mail size={12} /> Отправить
+          </button>
+          <div className="w-px h-5 bg-white/20 mx-1" />
+          <button className="flex items-center gap-1 px-2 py-1 text-[11px] hover:bg-white/10 rounded transition">
+            <CheckSquare size={12} /> Согласовать
+          </button>
+          <button className="flex items-center gap-1 px-2 py-1 text-[11px] hover:bg-white/10 rounded transition">
+            <Star size={12} /> Утвердить
+          </button>
+          <button className="flex items-center gap-1 px-2 py-1 text-[11px] hover:bg-white/10 rounded transition">
+            <Printer size={12} /> Печать
+          </button>
+          <div className="w-px h-5 bg-white/20 mx-1" />
+          <div className="flex-1" />
+          <div className="relative">
+            <Search size={11} className="absolute left-2 top-1/2 -translate-y-1/2 text-white/40" />
+            <input type="text" placeholder="Поиск..." className="h-6 pl-6 pr-2 bg-white/10 border border-white/20 rounded text-[11px] text-white placeholder:text-white/40 focus:outline-none focus:bg-white/20 w-44" />
+          </div>
+          <button className="relative ml-2 w-6 h-6 rounded hover:bg-white/10 flex items-center justify-center">
+            <Bell size={12} />
+            {(pendingCount + myTasksCount) > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-red-500 rounded-full text-[8px] flex items-center justify-center font-bold">{pendingCount + myTasksCount}</span>
+            )}
+          </button>
+          <button className="ml-1 w-6 h-6 rounded hover:bg-white/10 flex items-center justify-center">
+            <HelpCircle size={12} />
+          </button>
+        </div>
+      </div>
 
-            <div className="relative">
-              <button
-                onClick={() => setProfileOpen(!profileOpen)}
-                className="flex items-center gap-1.5 h-8 px-2 rounded hover:bg-slate-100 transition"
-              >
-                <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-xs">
-                  {currentUser.avatar}
-                </div>
-                <ChevronDown size={12} className="text-slate-400" />
-              </button>
-              {profileOpen && (
-                <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-xl border border-slate-200 py-1 z-50">
-                  <div className="px-3 py-2 border-b border-slate-100">
-                    <p className="text-xs font-medium">{currentUser.name}</p>
-                    <p className="text-[10px] text-slate-500">{currentUser.email}</p>
-                  </div>
-                  <Link to="/employees" onClick={() => setProfileOpen(false)} className="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50">
-                    <Settings size={12} /> Настройки
-                  </Link>
-                  <button className="flex items-center gap-2 px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 w-full">
-                    <LogOut size={12} /> Выйти
-                  </button>
-                </div>
-              )}
+      {/* ===== MAIN AREA ===== */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* ===== LEFT SIDEBAR — TREE ===== */}
+        <aside className={`w-52 bg-white border-r border-slate-300 flex-shrink-0 overflow-y-auto flex flex-col ${sidebarOpen ? 'fixed inset-y-0 left-0 z-50 pt-[72px]' : 'hidden lg:flex'}`}>
+          {/* Tree header */}
+          <div className="px-3 py-2 border-b border-slate-200 bg-slate-50">
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Навигация</p>
+          </div>
+          <div className="flex-1 py-1 overflow-y-auto">
+            {tree.map(node => renderNode(node))}
+          </div>
+          {/* User info at bottom */}
+          <div className="p-2 border-t border-slate-200 bg-slate-50">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-xs">{currentUser.avatar}</div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] font-medium text-slate-700 truncate">{currentUser.name.split(' ').slice(0, 2).join(' ')}</p>
+                <p className="text-[9px] text-slate-400 truncate">{currentUser.department}</p>
+              </div>
             </div>
           </div>
-        </header>
+        </aside>
 
-        {/* Content */}
-        <main className="flex-1 p-4 lg:p-5">
+        {/* Overlay for mobile */}
+        {sidebarOpen && <div className="fixed inset-0 bg-black/30 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
+
+        {/* ===== CONTENT ===== */}
+        <main className="flex-1 overflow-auto bg-[#ececec]">
           <Outlet />
         </main>
+      </div>
+
+      {/* ===== STATUS BAR ===== */}
+      <div className="h-5 bg-[#e8e8e8] border-t border-slate-300 flex items-center px-3 text-[10px] text-slate-500 flex-shrink-0 gap-4">
+        <span>Готово</span>
+        <span className="ml-auto">Документов: {documents.length}</span>
+        <span>|</span>
+        <span>Задач: {tasks.length}</span>
+        <span>|</span>
+        <span>Подключено</span>
       </div>
     </div>
   );
