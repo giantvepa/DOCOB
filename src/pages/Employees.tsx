@@ -1,6 +1,6 @@
 import { useContext, useState } from 'react';
 import { AppContext } from '../App';
-import { Users, Search, Mail, Phone, Building2 } from 'lucide-react';
+import { Search, Mail, Phone, Building2 } from 'lucide-react';
 
 export default function Employees() {
   const { employees } = useContext(AppContext);
@@ -18,63 +18,62 @@ export default function Employees() {
   });
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-lg font-bold text-slate-800">Сотрудники</h1>
-        <p className="text-xs text-slate-500">Справочник сотрудников организации</p>
+    <div className="flex flex-col h-full">
+      <div className="px-2 py-1 bg-gradient-to-r from-[#d0dce8] to-[#e8eef5] border-b border-[#aaa] flex items-center gap-2 flex-shrink-0">
+        <span className="text-[11px] font-bold text-[#333]">Сотрудники</span>
+        <span className="text-[9px] text-[#666]">Справочник ({filtered.length})</span>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white rounded-lg border border-slate-200 p-3 flex flex-wrap items-center gap-2">
-        <div className="flex-1 min-w-[180px] relative">
-          <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Поиск по ФИО, должности, email..." className="w-full h-8 pl-8 pr-3 bg-slate-50 border border-slate-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-400" />
+      <div className="px-2 py-1 bg-[#f0f0f0] border-b border-[#aaa] flex items-center gap-1.5 flex-shrink-0">
+        <div className="relative flex-1 max-w-[200px]">
+          <Search size={10} className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[#888]" />
+          <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Поиск по ФИО, должности..." className="w-full h-[20px] pl-5 pr-1.5 bg-white border border-[#aaa] rounded-sm text-[10px] focus:outline-none focus:border-[#0066cc]" />
         </div>
-        <select value={deptFilter} onChange={(e) => setDeptFilter(e.target.value)} className="h-8 px-2 bg-slate-50 border border-slate-200 rounded text-xs">
+        <select value={deptFilter} onChange={(e) => setDeptFilter(e.target.value)} className="h-[20px] px-1 bg-white border border-[#aaa] rounded-sm text-[10px]">
           <option value="all">Все подразделения</option>
           {departments.map(d => <option key={d} value={d}>{d}</option>)}
         </select>
-        <span className="text-[10px] text-slate-500">{filtered.length} сотрудников</span>
       </div>
 
-      {/* Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {filtered.map(emp => (
-          <div key={emp.id} className="bg-white rounded-lg border border-slate-200 p-4 hover:shadow-md transition">
-            <div className="flex items-start gap-3">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center text-xl flex-shrink-0">
-                {emp.avatar}
+      <div className="flex-1 overflow-auto p-2 bg-[#ece9e0]">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+          {filtered.map(emp => (
+            <div key={emp.id} className="bg-white border border-[#aaa] shadow-sm">
+              <div className="px-2 py-1.5 bg-gradient-to-r from-[#f8f9fb] to-white border-b border-[#ccc] flex items-start gap-2">
+                <div className="w-8 h-8 rounded-sm bg-[#d0dce8] flex items-center justify-center text-sm flex-shrink-0 border border-[#aaa]">
+                  {emp.avatar}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-[10px] font-bold text-[#333] truncate">{emp.name}</h3>
+                  <p className="text-[9px] text-[#666] mt-0.5">{emp.position}</p>
+                  <div className="flex items-center gap-0.5 mt-0.5">
+                    <Building2 size={8} className="text-[#888]" />
+                    <span className="text-[8px] text-[#666]">{emp.department}</span>
+                  </div>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-semibold text-slate-800 truncate">{emp.name}</h3>
-                <p className="text-[11px] text-slate-500 mt-0.5">{emp.position}</p>
-                <div className="flex items-center gap-1 mt-1">
-                  <Building2 size={10} className="text-slate-400" />
-                  <span className="text-[10px] text-slate-500">{emp.department}</span>
+              <div className="p-2 space-y-1">
+                <div className="flex items-center gap-1 text-[9px] text-[#555]">
+                  <Mail size={8} className="text-[#888]" />
+                  <span className="truncate">{emp.email}</span>
+                </div>
+                <div className="flex items-center gap-1 text-[9px] text-[#555]">
+                  <Phone size={8} className="text-[#888]" />
+                  <span>{emp.phone}</span>
+                </div>
+                <div className="pt-1">
+                  <span className={`px-1 py-0.5 rounded-sm text-[8px] font-medium ${
+                    emp.role === 'admin' ? 'bg-[#ffebee] text-[#c62828]' :
+                    emp.role === 'manager' ? 'bg-[#fff3e0] text-[#cc6600]' :
+                    'bg-[#f5f5f5] text-[#666]'
+                  }`}>
+                    {emp.role === 'admin' ? 'Администратор' : emp.role === 'manager' ? 'Руководитель' : 'Сотрудник'}
+                  </span>
                 </div>
               </div>
             </div>
-            <div className="mt-3 pt-3 border-t border-slate-100 space-y-1.5">
-              <div className="flex items-center gap-2 text-[10px] text-slate-600">
-                <Mail size={10} className="text-slate-400" />
-                <span className="truncate">{emp.email}</span>
-              </div>
-              <div className="flex items-center gap-2 text-[10px] text-slate-600">
-                <Phone size={10} className="text-slate-400" />
-                <span>{emp.phone}</span>
-              </div>
-            </div>
-            <div className="mt-2">
-              <span className={`px-1.5 py-0.5 rounded text-[9px] font-medium ${
-                emp.role === 'admin' ? 'bg-red-50 text-red-700' :
-                emp.role === 'manager' ? 'bg-amber-50 text-amber-700' :
-                'bg-slate-100 text-slate-600'
-              }`}>
-                {emp.role === 'admin' ? 'Администратор' : emp.role === 'manager' ? 'Руководитель' : 'Сотрудник'}
-              </span>
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -1,20 +1,20 @@
 import { useContext, useState } from 'react';
-import { AppContext, TaskStatus, TaskPriority } from '../App';
-import { CheckSquare, Plus, Filter, Calendar, User, Clock, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { AppContext, TaskStatus } from '../App';
+import { CheckSquare, Plus, CheckCircle2 } from 'lucide-react';
 
 const STATUS_MAP: Record<TaskStatus, { label: string; color: string; bg: string }> = {
-  new: { label: 'Новая', color: 'text-blue-700', bg: 'bg-blue-50' },
-  in_progress: { label: 'В работе', color: 'text-amber-700', bg: 'bg-amber-50' },
-  completed: { label: 'Выполнена', color: 'text-emerald-700', bg: 'bg-emerald-50' },
-  overdue: { label: 'Просрочена', color: 'text-red-700', bg: 'bg-red-50' },
-  deferred: { label: 'Отложена', color: 'text-slate-600', bg: 'bg-slate-100' },
+  new: { label: 'Новая', color: 'text-[#0066cc]', bg: 'bg-[#e3f2fd]' },
+  in_progress: { label: 'В работе', color: 'text-[#cc6600]', bg: 'bg-[#fff3e0]' },
+  completed: { label: 'Выполнена', color: 'text-[#2e7d32]', bg: 'bg-[#e8f5e9]' },
+  overdue: { label: 'Просрочена', color: 'text-[#c62828]', bg: 'bg-[#ffebee]' },
+  deferred: { label: 'Отложена', color: 'text-[#666]', bg: 'bg-[#f5f5f5]' },
 };
 
-const PRIORITY_MAP: Record<TaskPriority, { label: string; color: string; bg: string }> = {
-  low: { label: 'Низкий', color: 'text-slate-600', bg: 'bg-slate-100' },
-  normal: { label: 'Обычный', color: 'text-blue-700', bg: 'bg-blue-50' },
-  high: { label: 'Высокий', color: 'text-amber-700', bg: 'bg-amber-50' },
-  critical: { label: 'Критичный', color: 'text-red-700', bg: 'bg-red-50' },
+const PRIORITY_MAP: Record<string, { label: string; color: string; bg: string }> = {
+  low: { label: 'Низкий', color: 'text-[#666]', bg: 'bg-[#f5f5f5]' },
+  normal: { label: 'Обычный', color: 'text-[#0066cc]', bg: 'bg-[#e3f2fd]' },
+  high: { label: 'Высокий', color: 'text-[#cc6600]', bg: 'bg-[#fff3e0]' },
+  critical: { label: 'Критичный', color: 'text-[#c62828]', bg: 'bg-[#ffebee]' },
 };
 
 export default function Tasks() {
@@ -29,10 +29,10 @@ export default function Tasks() {
     return true;
   }).sort((a, b) => {
     const priorityOrder = { critical: 0, high: 1, normal: 2, low: 3 };
-    return priorityOrder[a.priority] - priorityOrder[b.priority];
+    return priorityOrder[a.priority as keyof typeof priorityOrder] - priorityOrder[b.priority as keyof typeof priorityOrder];
   });
 
-  const fmtDate = (d: string) => new Date(d).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+  const fmtDate = (d: string) => new Date(d).toLocaleDateString('ru-RU');
   const getEmp = (id: string) => employees.find(e => e.id === id);
 
   const toggleComplete = (taskId: string) => {
@@ -40,63 +40,76 @@ export default function Tasks() {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-bold text-slate-800">Задачи</h1>
-          <p className="text-xs text-slate-500">Управление задачами и контроль исполнения</p>
+    <div className="flex flex-col h-full">
+      <div className="px-2 py-1 bg-gradient-to-r from-[#d0dce8] to-[#e8eef5] border-b border-[#aaa] flex items-center gap-2 flex-shrink-0">
+        <span className="text-[11px] font-bold text-[#333]">Задачи и поручения</span>
+        <span className="text-[9px] text-[#666]">({filtered.length})</span>
+        <div className="ml-auto flex items-center gap-1">
+          <button className="flex items-center gap-1 px-2 py-0.5 text-[10px] bg-[#0066cc] hover:bg-[#0055aa] text-white rounded-sm border border-[#004499]">
+            <Plus size={10} /> Новая задача
+          </button>
         </div>
-        <button className="flex items-center gap-1.5 h-8 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium"><Plus size={13} /> Новая задача</button>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white rounded-lg border border-slate-200 p-3 flex flex-wrap items-center gap-2">
-        <div className="flex items-center bg-slate-100 rounded p-0.5">
+      <div className="px-2 py-1 bg-[#f0f0f0] border-b border-[#aaa] flex items-center gap-1.5 flex-shrink-0">
+        <div className="flex items-center bg-white border border-[#aaa] rounded-sm">
           {[{ id: 'my' as const, label: 'Мои задачи' }, { id: 'assigned' as const, label: 'Порученные мной' }, { id: 'all' as const, label: 'Все' }].map(f => (
-            <button key={f.id} onClick={() => setFilter(f.id)} className={`px-2.5 py-1 rounded text-[11px] font-medium transition ${filter === f.id ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500'}`}>{f.label}</button>
+            <button key={f.id} onClick={() => setFilter(f.id)} className={`px-2 py-0.5 text-[10px] transition ${filter === f.id ? 'bg-[#0066cc] text-white' : 'text-[#333] hover:bg-[#e8eef5]'}`}>{f.label}</button>
           ))}
         </div>
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as TaskStatus | 'all')} className="h-7 px-2 bg-slate-50 border border-slate-200 rounded text-[11px]">
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as TaskStatus | 'all')} className="h-[20px] px-1 bg-white border border-[#aaa] rounded-sm text-[10px]">
           <option value="all">Все статусы</option>
           <option value="new">Новые</option>
           <option value="in_progress">В работе</option>
           <option value="completed">Выполнены</option>
           <option value="overdue">Просрочены</option>
         </select>
-        <span className="text-[10px] text-slate-500 ml-auto">{filtered.length} задач</span>
+        <span className="text-[9px] text-[#666] ml-auto">{filtered.length} задач</span>
       </div>
 
-      {/* Task list */}
-      <div className="bg-white rounded-lg border border-slate-200 divide-y divide-slate-100">
-        {filtered.length === 0 ? (
-          <div className="text-center py-10">
-            <CheckSquare size={28} className="text-slate-300 mx-auto mb-2" />
-            <p className="text-xs text-slate-500">Нет задач</p>
-          </div>
-        ) : filtered.map(task => {
-          const s = STATUS_MAP[task.status];
-          const p = PRIORITY_MAP[task.priority];
-          const assignee = getEmp(task.assigneeId);
-          const isOverdue = new Date(task.dueDate) < new Date() && task.status !== 'completed';
-          return (
-            <div key={task.id} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition">
-              <button onClick={() => toggleComplete(task.id)} className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition ${task.status === 'completed' ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300 hover:border-blue-400'}`}>
-                {task.status === 'completed' && <CheckCircle2 size={12} className="text-white" />}
-              </button>
-              <div className="flex-1 min-w-0">
-                <p className={`text-xs font-medium ${task.status === 'completed' ? 'text-slate-400 line-through' : 'text-slate-800'}`}>{task.title}</p>
-                <div className="flex items-center gap-2 mt-1 flex-wrap">
-                  <span className={`px-1.5 py-0.5 rounded text-[9px] font-medium ${p.bg} ${p.color}`}>{p.label}</span>
-                  <span className={`px-1.5 py-0.5 rounded text-[9px] font-medium ${s.bg} ${s.color}`}>{s.label}</span>
-                  <span className="text-[10px] text-slate-500 flex items-center gap-0.5"><User size={9} />{assignee?.name.split(' ').slice(0, 2).join(' ')}</span>
-                  <span className={`text-[10px] flex items-center gap-0.5 ${isOverdue ? 'text-red-500' : 'text-slate-400'}`}>
-                    <Calendar size={9} />{fmtDate(task.dueDate)}
-                  </span>
-                </div>
-              </div>
-            </div>
-          );
-        })}
+      <div className="flex-1 overflow-auto bg-white">
+        <table className="w-full text-[10px] border-collapse">
+          <thead className="sticky top-0 z-10">
+            <tr className="bg-gradient-to-b from-[#e8eef5] to-[#d0dce8] border-b border-[#aaa]">
+              <th className="text-left px-1.5 py-1 font-bold text-[#333] border-r border-[#bbb] w-6"></th>
+              <th className="text-left px-1.5 py-1 font-bold text-[#333] border-r border-[#bbb]">Задача</th>
+              <th className="text-left px-1.5 py-1 font-bold text-[#333] border-r border-[#bbb] w-16">Срок</th>
+              <th className="text-left px-1.5 py-1 font-bold text-[#333] border-r border-[#bbb] w-16">Приоритет</th>
+              <th className="text-left px-1.5 py-1 font-bold text-[#333] border-r border-[#bbb] w-20">Исполнитель</th>
+              <th className="text-left px-1.5 py-1 font-bold text-[#333] w-16">Статус</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((task, i) => {
+              const s = STATUS_MAP[task.status];
+              const p = PRIORITY_MAP[task.priority];
+              const assignee = getEmp(task.assigneeId);
+              return (
+                <tr key={task.id} className={`${i % 2 === 0 ? 'bg-white' : 'bg-[#f9f9f9]'} hover:bg-[#e3f0ff] border-b border-[#eee]`}>
+                  <td className="px-1.5 py-0.5 border-r border-[#eee]">
+                    <button onClick={() => toggleComplete(task.id)} className={`w-3.5 h-3.5 rounded-sm border flex items-center justify-center ${task.status === 'completed' ? 'bg-[#2e7d32] border-[#1b5e20]' : 'border-[#aaa] hover:border-[#0066cc]'}`}>
+                      {task.status === 'completed' && <CheckCircle2 size={9} className="text-white" />}
+                    </button>
+                  </td>
+                  <td className={`px-1.5 py-0.5 border-r border-[#eee] ${task.status === 'completed' ? 'text-[#888] line-through' : 'text-[#333]'}`}>{task.title}</td>
+                  <td className="px-1.5 py-0.5 text-[#555] border-r border-[#eee]">{fmtDate(task.dueDate)}</td>
+                  <td className="px-1.5 py-0.5 border-r border-[#eee]">
+                    <span className={`px-1 py-0.5 rounded-sm text-[8px] font-medium ${p.bg} ${p.color}`}>{p.label}</span>
+                  </td>
+                  <td className="px-1.5 py-0.5 text-[#555] border-r border-[#eee]">{assignee?.name.split(' ').slice(0, 2).join(' ')}</td>
+                  <td className="px-1.5 py-0.5">
+                    <span className={`px-1 py-0.5 rounded-sm text-[8px] font-medium ${s.bg} ${s.color}`}>{s.label}</span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        {filtered.length === 0 && <div className="text-center py-8 text-[10px] text-[#888]">Нет задач</div>}
+      </div>
+
+      <div className="px-2 py-0.5 bg-[#f0f0f0] border-t border-[#aaa] text-[9px] text-[#555] flex-shrink-0">
+        Записей: {filtered.length}
       </div>
     </div>
   );

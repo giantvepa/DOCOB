@@ -2,26 +2,18 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useContext, useState } from 'react';
 import { AppContext } from '../App';
 import {
-  Inbox, Send, FileText, FolderOpen, Archive, Trash2,
+  Inbox, Send, FileText, FolderOpen, Archive,
   CheckSquare, Calendar, Users, BarChart3, Settings,
   ChevronRight, ChevronDown, Search, Bell, Plus,
   Save, Printer, Mail, Star, AlertCircle, HelpCircle,
-  Menu, X, Home
+  Menu, Home, RefreshCw, Trash2, Copy, ArrowRight,
+  ArrowLeft, Filter, SortAsc, Paperclip, Eye, Edit3, X
 } from 'lucide-react';
-
-interface TreeNode {
-  id: string;
-  label: string;
-  icon: any;
-  path?: string;
-  badge?: number;
-  children?: TreeNode[];
-}
 
 export default function Layout() {
   const { currentUser, documents, tasks } = useContext(AppContext);
   const location = useLocation();
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({ docs: true, refs: false, sys: false });
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({ docs: true, refs: true, sys: false });
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const incomingCount = documents.filter(d => d.type === 'incoming').length;
@@ -35,31 +27,44 @@ export default function Layout() {
 
   const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/');
 
+  interface TreeNode {
+    id: string;
+    label: string;
+    icon: any;
+    path?: string;
+    count?: number;
+    children?: TreeNode[];
+  }
+
   const tree: TreeNode[] = [
     {
       id: 'docs', label: 'Документы', icon: FolderOpen, children: [
-        { id: 'incoming', label: `Входящие (${incomingCount})`, icon: Inbox, path: '/documents?type=incoming' },
-        { id: 'outgoing', label: `Исходящие (${outgoingCount})`, icon: Send, path: '/documents?type=outgoing' },
-        { id: 'internal', label: `Внутренние (${internalCount})`, icon: FileText, path: '/documents?type=internal' },
-        { id: 'drafts', label: `Черновики (${draftCount})`, icon: FileText, path: '/documents?status=draft' },
-        { id: 'pending', label: `На согласовании (${pendingCount})`, icon: AlertCircle, path: '/documents?status=on_approval' },
-        { id: 'all_docs', label: 'Все документы', icon: FolderOpen, path: '/documents' },
+        { id: 'incoming', label: 'Входящие', icon: Inbox, count: incomingCount, path: '/documents?type=incoming' },
+        { id: 'outgoing', label: 'Исходящие', icon: Send, count: outgoingCount, path: '/documents?type=outgoing' },
+        { id: 'internal', label: 'Внутренние', icon: FileText, count: internalCount, path: '/documents?type=internal' },
+        { id: 'drafts', label: 'Черновики', icon: Edit3, count: draftCount, path: '/documents?status=draft' },
+        { id: 'pending', label: 'На согласовании', icon: AlertCircle, count: pendingCount, path: '/documents?status=on_approval' },
+        { id: 'all_docs', label: 'Все документы', icon: FolderOpen, count: documents.length, path: '/documents' },
         { id: 'archived', label: 'Архив', icon: Archive, path: '/documents?status=archived' },
       ]
     },
-    { id: 'tasks', label: `Задачи (${myTasksCount})`, icon: CheckSquare, path: '/tasks' },
+    { id: 'tasks', label: 'Задачи и поручения', icon: CheckSquare, count: myTasksCount, path: '/tasks' },
     { id: 'meetings', label: 'Совещания', icon: Calendar, path: '/meetings' },
     { id: 'registry', label: 'Канцелярия', icon: Mail, path: '/registry' },
     {
       id: 'refs', label: 'Справочники', icon: FolderOpen, children: [
         { id: 'employees', label: 'Сотрудники', icon: Users, path: '/employees' },
-        { id: 'org', label: 'Организации', icon: Users, path: '/employees' },
+        { id: 'orgs', label: 'Организации', icon: Users, path: '/employees' },
+        { id: 'nomenclature', label: 'Номенклатура дел', icon: FolderOpen, path: '/registry' },
       ]
     },
-    { id: 'reports', label: 'Отчёты', icon: BarChart3, path: '/reports' },
+    { id: 'reports', label: 'Отчёты и аналитика', icon: BarChart3, path: '/reports' },
     {
       id: 'sys', label: 'Администрирование', icon: Settings, children: [
-        { id: 'settings', label: 'Настройки', icon: Settings, path: '/reports' },
+        { id: 'users', label: 'Пользователи', icon: Users, path: '/employees' },
+        { id: 'routes', label: 'Маршруты согласования', icon: ArrowRight, path: '/reports' },
+        { id: 'templates', label: 'Шаблоны документов', icon: Copy, path: '/documents' },
+        { id: 'settings', label: 'Системные параметры', icon: Settings, path: '/reports' },
       ]
     },
   ];
@@ -72,26 +77,29 @@ export default function Layout() {
     return (
       <div key={node.id}>
         <div
-          onClick={() => {
-            if (hasChildren) toggle(node.id);
-          }}
-          className={`flex items-center gap-1.5 py-[5px] pr-2 cursor-pointer text-[12px] transition-colors group ${
-            active ? 'bg-blue-100 text-blue-800 font-medium' : 'text-slate-700 hover:bg-slate-100'
+          onClick={() => { if (hasChildren) toggle(node.id); }}
+          className={`flex items-center gap-1 py-[3px] pr-1 cursor-pointer text-[11px] leading-tight select-none ${
+            active ? 'bg-[#cce4ff] text-[#003d80]' : 'text-[#333] hover:bg-[#e8f0fb]'
           }`}
-          style={{ paddingLeft: `${depth * 14 + 6}px` }}
+          style={{ paddingLeft: `${depth * 12 + 4}px` }}
         >
           {hasChildren ? (
-            isExpanded ? <ChevronDown size={12} className="text-slate-400 flex-shrink-0" /> : <ChevronRight size={12} className="text-slate-400 flex-shrink-0" />
+            isExpanded ? <ChevronDown size={10} className="text-[#666] flex-shrink-0" /> : <ChevronRight size={10} className="text-[#666] flex-shrink-0" />
           ) : (
-            <span className="w-3 flex-shrink-0" />
+            <span className="w-[10px] flex-shrink-0" />
           )}
-          <node.icon size={13} className={active ? 'text-blue-600' : 'text-slate-400'} />
+          <node.icon size={12} className={active ? 'text-[#0055b3]' : 'text-[#666]'} />
           {node.path ? (
             <Link to={node.path} className="flex-1 truncate" onClick={(e) => e.stopPropagation()}>
               {node.label}
             </Link>
           ) : (
-            <span className="flex-1 truncate">{node.label}</span>
+            <span className="flex-1 truncate font-medium">{node.label}</span>
+          )}
+          {node.count !== undefined && node.count > 0 && (
+            <span className={`text-[9px] px-1 rounded-sm ${active ? 'bg-[#0055b3] text-white' : 'bg-[#ddd] text-[#555]'}`}>
+              {node.count}
+            </span>
           )}
         </div>
         {hasChildren && isExpanded && node.children!.map(child => renderNode(child, depth + 1))}
@@ -100,111 +108,124 @@ export default function Layout() {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-[#f0f0f0] overflow-hidden">
-      {/* ===== TOP TOOLBAR ===== */}
-      <div className="bg-gradient-to-b from-[#3b6ea5] to-[#2d5986] text-white flex-shrink-0">
-        {/* Title bar */}
-        <div className="flex items-center h-8 px-3 border-b border-white/10 text-[11px]">
-          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="lg:hidden mr-2">
-            <Menu size={14} />
-          </button>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-white/20 flex items-center justify-center">
-              <FileText size={10} />
-            </div>
-            <span className="font-semibold tracking-wide">СЭД ТЕЗИС</span>
-            <span className="text-white/50">— Организация: ООО «Демо-Предприятие»</span>
+    <div className="h-screen flex flex-col bg-[#ece9e0] overflow-hidden" style={{ fontFamily: "'Segoe UI', Tahoma, sans-serif" }}>
+      {/* ===== TITLE BAR ===== */}
+      <div className="bg-gradient-to-r from-[#1e3a5f] via-[#2a5298] to-[#1e3a5f] text-white flex-shrink-0 h-[26px] flex items-center px-2 text-[11px]">
+        <button onClick={() => setSidebarOpen(!sidebarOpen)} className="lg:hidden mr-1">
+          <Menu size={12} />
+        </button>
+        <div className="flex items-center gap-1.5">
+          <div className="w-4 h-4 rounded-sm bg-white/20 flex items-center justify-center">
+            <FileText size={9} />
           </div>
-          <div className="ml-auto flex items-center gap-3 text-white/70">
-            <span>{currentUser.name}</span>
-            <span className="text-white/40">|</span>
-            <span>{new Date().toLocaleDateString('ru-RU')}</span>
-          </div>
+          <span className="font-bold tracking-wide text-[11px]">СЭД «ТЕЗИС»</span>
+          <span className="text-white/40 mx-1">—</span>
+          <span className="text-white/70 text-[10px]">Организация электронного документооборота</span>
         </div>
+        <div className="ml-auto flex items-center gap-2 text-white/60 text-[10px]">
+          <span>{currentUser.name}</span>
+          <span>|</span>
+          <span>{new Date().toLocaleDateString('ru-RU')} {new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</span>
+        </div>
+      </div>
 
-        {/* Action toolbar */}
-        <div className="flex items-center h-9 px-2 gap-0.5">
-          <Link to="/" className="flex items-center gap-1 px-2 py-1 text-[11px] hover:bg-white/10 rounded transition">
-            <Home size={12} /> Главная
-          </Link>
-          <div className="w-px h-5 bg-white/20 mx-1" />
-          <button className="flex items-center gap-1 px-2 py-1 text-[11px] hover:bg-white/10 rounded transition">
-            <Plus size={12} /> Создать
+      {/* ===== MENU BAR ===== */}
+      <div className="bg-[#f0f0f0] border-b border-[#aaa] flex items-center h-[22px] px-1 text-[11px] flex-shrink-0">
+        {['Файл', 'Правка', 'Документ', 'Процессы', 'Вид', 'Сервис', 'Справка'].map(item => (
+          <button key={item} className="px-2 py-0.5 hover:bg-[#cce4ff] hover:border hover:border-[#7ba8e0] rounded-sm text-[#333]">
+            {item}
           </button>
-          <button className="flex items-center gap-1 px-2 py-1 text-[11px] hover:bg-white/10 rounded transition">
-            <Save size={12} /> Сохранить
-          </button>
-          <button className="flex items-center gap-1 px-2 py-1 text-[11px] hover:bg-white/10 rounded transition">
-            <Mail size={12} /> Отправить
-          </button>
-          <div className="w-px h-5 bg-white/20 mx-1" />
-          <button className="flex items-center gap-1 px-2 py-1 text-[11px] hover:bg-white/10 rounded transition">
-            <CheckSquare size={12} /> Согласовать
-          </button>
-          <button className="flex items-center gap-1 px-2 py-1 text-[11px] hover:bg-white/10 rounded transition">
-            <Star size={12} /> Утвердить
-          </button>
-          <button className="flex items-center gap-1 px-2 py-1 text-[11px] hover:bg-white/10 rounded transition">
-            <Printer size={12} /> Печать
-          </button>
-          <div className="w-px h-5 bg-white/20 mx-1" />
-          <div className="flex-1" />
-          <div className="relative">
-            <Search size={11} className="absolute left-2 top-1/2 -translate-y-1/2 text-white/40" />
-            <input type="text" placeholder="Поиск..." className="h-6 pl-6 pr-2 bg-white/10 border border-white/20 rounded text-[11px] text-white placeholder:text-white/40 focus:outline-none focus:bg-white/20 w-44" />
-          </div>
-          <button className="relative ml-2 w-6 h-6 rounded hover:bg-white/10 flex items-center justify-center">
-            <Bell size={12} />
-            {(pendingCount + myTasksCount) > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-red-500 rounded-full text-[8px] flex items-center justify-center font-bold">{pendingCount + myTasksCount}</span>
-            )}
-          </button>
-          <button className="ml-1 w-6 h-6 rounded hover:bg-white/10 flex items-center justify-center">
-            <HelpCircle size={12} />
-          </button>
+        ))}
+      </div>
+
+      {/* ===== TOOLBAR ===== */}
+      <div className="bg-gradient-to-b from-[#f8f8f8] to-[#e8e8e8] border-b border-[#aaa] flex items-center h-[32px] px-1 gap-0.5 flex-shrink-0">
+        <button className="flex items-center gap-1 px-2 py-1 text-[11px] hover:bg-[#cce4ff] rounded-sm border border-transparent hover:border-[#7ba8e0]">
+          <Plus size={12} className="text-[#0066cc]" /> <span>Создать</span>
+        </button>
+        <button className="flex items-center gap-1 px-2 py-1 text-[11px] hover:bg-[#cce4ff] rounded-sm border border-transparent hover:border-[#7ba8e0]">
+          <Edit3 size={12} className="text-[#0066cc]" /> <span>Открыть</span>
+        </button>
+        <button className="flex items-center gap-1 px-2 py-1 text-[11px] hover:bg-[#cce4ff] rounded-sm border border-transparent hover:border-[#7ba8e0]">
+          <Save size={12} className="text-[#0066cc]" /> <span>Сохранить</span>
+        </button>
+        <div className="w-px h-5 bg-[#aaa] mx-0.5" />
+        <button className="flex items-center gap-1 px-2 py-1 text-[11px] hover:bg-[#cce4ff] rounded-sm border border-transparent hover:border-[#7ba8e0]">
+          <Mail size={12} className="text-[#0066cc]" /> <span>Отправить</span>
+        </button>
+        <button className="flex items-center gap-1 px-2 py-1 text-[11px] hover:bg-[#cce4ff] rounded-sm border border-transparent hover:border-[#7ba8e0]">
+          <CheckSquare size={12} className="text-[#cc6600]" /> <span>Согласовать</span>
+        </button>
+        <button className="flex items-center gap-1 px-2 py-1 text-[11px] hover:bg-[#cce4ff] rounded-sm border border-transparent hover:border-[#7ba8e0]">
+          <Star size={12} className="text-[#cc6600]" /> <span>Утвердить</span>
+        </button>
+        <button className="flex items-center gap-1 px-2 py-1 text-[11px] hover:bg-[#cce4ff] rounded-sm border border-transparent hover:border-[#7ba8e0]">
+          <Printer size={12} className="text-[#333]" /> <span>Печать</span>
+        </button>
+        <div className="w-px h-5 bg-[#aaa] mx-0.5" />
+        <button className="flex items-center gap-1 px-1.5 py-1 text-[11px] hover:bg-[#cce4ff] rounded-sm border border-transparent hover:border-[#7ba8e0]">
+          <RefreshCw size={11} />
+        </button>
+        <button className="flex items-center gap-1 px-1.5 py-1 text-[11px] hover:bg-[#cce4ff] rounded-sm border border-transparent hover:border-[#7ba8e0]">
+          <Filter size={11} />
+        </button>
+        <button className="flex items-center gap-1 px-1.5 py-1 text-[11px] hover:bg-[#cce4ff] rounded-sm border border-transparent hover:border-[#7ba8e0]">
+          <SortAsc size={11} />
+        </button>
+        <div className="flex-1" />
+        <div className="relative">
+          <Search size={11} className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[#888]" />
+          <input type="text" placeholder="Поиск документов..." className="h-[22px] pl-5 pr-2 bg-white border border-[#aaa] rounded-sm text-[11px] focus:outline-none focus:border-[#0066cc] w-48" />
         </div>
+        <button className="relative ml-1 w-6 h-6 rounded-sm hover:bg-[#cce4ff] flex items-center justify-center border border-transparent hover:border-[#7ba8e0]">
+          <Bell size={12} className="text-[#333]" />
+          {(pendingCount + myTasksCount) > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-red-600 rounded-full text-[7px] text-white flex items-center justify-center font-bold">{pendingCount + myTasksCount}</span>
+          )}
+        </button>
       </div>
 
       {/* ===== MAIN AREA ===== */}
       <div className="flex flex-1 overflow-hidden">
-        {/* ===== LEFT SIDEBAR — TREE ===== */}
-        <aside className={`w-52 bg-white border-r border-slate-300 flex-shrink-0 overflow-y-auto flex flex-col ${sidebarOpen ? 'fixed inset-y-0 left-0 z-50 pt-[72px]' : 'hidden lg:flex'}`}>
+        {/* ===== LEFT — FOLDER TREE ===== */}
+        <aside className={`w-[200px] bg-white border-r border-[#aaa] flex-shrink-0 flex flex-col overflow-hidden ${sidebarOpen ? 'fixed inset-y-0 left-0 z-50' : 'hidden lg:flex'}`} style={{ marginTop: 0 }}>
           {/* Tree header */}
-          <div className="px-3 py-2 border-b border-slate-200 bg-slate-50">
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Навигация</p>
+          <div className="px-2 py-1 bg-gradient-to-b from-[#e8eef5] to-[#d0dce8] border-b border-[#aaa]">
+            <p className="text-[10px] font-bold text-[#333] uppercase tracking-wide">Навигатор</p>
           </div>
-          <div className="flex-1 py-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto py-0.5 bg-white">
             {tree.map(node => renderNode(node))}
           </div>
-          {/* User info at bottom */}
-          <div className="p-2 border-t border-slate-200 bg-slate-50">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-xs">{currentUser.avatar}</div>
+          {/* User panel */}
+          <div className="p-1.5 border-t border-[#aaa] bg-[#f0f0f0]">
+            <div className="flex items-center gap-1.5">
+              <div className="w-6 h-6 rounded-sm bg-[#d0dce8] flex items-center justify-center text-[10px] border border-[#aaa]">{currentUser.avatar}</div>
               <div className="flex-1 min-w-0">
-                <p className="text-[10px] font-medium text-slate-700 truncate">{currentUser.name.split(' ').slice(0, 2).join(' ')}</p>
-                <p className="text-[9px] text-slate-400 truncate">{currentUser.department}</p>
+                <p className="text-[10px] font-medium text-[#333] truncate">{currentUser.name.split(' ').slice(0, 2).join(' ')}</p>
+                <p className="text-[8px] text-[#666] truncate">{currentUser.position}</p>
               </div>
             </div>
           </div>
         </aside>
 
-        {/* Overlay for mobile */}
         {sidebarOpen && <div className="fixed inset-0 bg-black/30 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
 
-        {/* ===== CONTENT ===== */}
-        <main className="flex-1 overflow-auto bg-[#ececec]">
+        {/* ===== CENTER — CONTENT ===== */}
+        <main className="flex-1 overflow-hidden flex flex-col bg-[#ece9e0]">
           <Outlet />
         </main>
       </div>
 
       {/* ===== STATUS BAR ===== */}
-      <div className="h-5 bg-[#e8e8e8] border-t border-slate-300 flex items-center px-3 text-[10px] text-slate-500 flex-shrink-0 gap-4">
-        <span>Готово</span>
-        <span className="ml-auto">Документов: {documents.length}</span>
+      <div className="h-[20px] bg-[#f0f0f0] border-t border-[#aaa] flex items-center px-2 text-[10px] text-[#555] flex-shrink-0 gap-3">
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500"></span> Подключено</span>
+        <span>|</span>
+        <span>Документов: {documents.length}</span>
         <span>|</span>
         <span>Задач: {tasks.length}</span>
         <span>|</span>
-        <span>Подключено</span>
+        <span>На согласовании: {pendingCount}</span>
+        <span className="ml-auto">СЭД «ТЕЗИС» v5.3 • © 2024</span>
       </div>
     </div>
   );
