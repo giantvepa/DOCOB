@@ -1,10 +1,10 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { dbGetAll, dbGetByIndex, dbAdd, dbPut, initDB } from '../utils/db';
+import { apiCall } from '../backend/server';
+import { getStoredToken, removeToken, storeToken } from '../backend/utils/jwt';
 
 interface User {
   id: string;
   email: string;
-  password: string;
   name: string;
   position: string;
   department: string;
@@ -16,9 +16,8 @@ interface User {
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  register: (data: Omit<User, 'id' | 'createdAt'>) => Promise<{ success: boolean; error?: string }>;
+  register: (data: Omit<User, 'id' | 'createdAt'> & { password: string }) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
-  updateProfile: (data: Partial<User>) => Promise<void>;
   isAuthenticated: boolean;
 }
 
@@ -29,81 +28,59 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    // Загрузка сессии из localStorage
-    const savedUser = localStorage.getItem('esasy_pikir_current_user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-      setIsAuthenticated(true);
+    // Check if token exists
+    const token = getStoredToken();
+    if (token) {
+      // Try to get user info
+      apiCall<User>('GET', '/api/auth/me').then(response => {
+        if (response.success && response.data) {
+          setUser(response.data);
+          setIsAuthenticated(true);
+        }
+      });
     }
   }, []);
 
   const login = async (email: string, password: string) => {
     try {
-      await initDB();
-      const users = await dbGetByIndex<User>('users', 'email', email);
+      const response = await apiCall<{ token: string; user: User }>('POST', '/api/auth/login', { email, password });
       
-      if (users.length === 0) {
-        return { success: false, error: 'Пользователь не найден' };
+      if (response.success && response.data) {
+        setUser(response.data.user);
+        setIsAuthenticated(true);
+        return { success: true };
+      } else {
+        return { success: false, error: response.error || 'Ошибка входа' };
       }
-
-      const foundUser = users[0];
-      if (foundUser.password !== password) {
-        return { success: false, error: 'Неверный пароль' };
-      }
-
-      setUser(foundUser);
-      setIsAuthenticated(true);
-      localStorage.setItem('esasy_pikir_current_user', JSON.stringify(foundUser));
-      
-      return { success: true };
     } catch (error) {
       return { success: false, error: 'Ошибка входа' };
     }
   };
 
-  const register = async (data: Omit<User, 'id' | 'createdAt'>) => {
+  const register = async (data: Omit<User, 'id' | 'createdAt'> & { password: string }) => {
     try {
-      await initDB();
-      const existingUsers = await dbGetByIndex<User>('users', 'email', data.email);
+      const response = await apiCall<{ token: string; user: User }>('POST', '/api/auth/register', data);
       
-      if (existingUsers.length > 0) {
-        return { success: false, error: 'Пользователь с таким email уже существует' };
+      if (response.success && response.data) {
+        setUser(response.data.user);
+        setIsAuthenticated(true);
+        return { success: true };
+      } else {
+        return { success: false, error: response.error || 'Ошибка регистрации' };
       }
-
-      const newUser: User = {
-        ...data,
-        id: Date.now().toString(),
-        createdAt: new Date().toISOString(),
-      };
-
-      await dbAdd('users', newUser);
-      setUser(newUser);
-      setIsAuthenticated(true);
-      localStorage.setItem('esasy_pikir_current_user', JSON.stringify(newUser));
-      
-      return { success: true };
     } catch (error) {
       return { success: false, error: 'Ошибка регистрации' };
     }
   };
 
   const logout = () => {
+    removeToken();
     setUser(null);
     setIsAuthenticated(false);
-    localStorage.removeItem('esasy_pikir_current_user');
-  };
-
-  const updateProfile = async (data: Partial<User>) => {
-    if (!user) return;
-    
-    const updatedUser = { ...user, ...data };
-    await dbPut('users', updatedUser);
-    setUser(updatedUser);
-    localStorage.setItem('esasy_pikir_current_user', JSON.stringify(updatedUser));
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, updateProfile, isAuthenticated }}>
+    <AuthContext.Provider value={{ user, login, register, logout, isAuthenticated }}>
       {children}
     </AuthContext.Provider>
   );

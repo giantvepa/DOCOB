@@ -2,10 +2,11 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useContext, useState } from 'react';
 import { AppContext } from '../App';
 import { useAuth } from '../contexts/AuthContext';
+import { resetApp } from '../utils/clearData';
 import {
   LayoutDashboard, FileText, CheckSquare, Calendar,
   BookOpen, Users, BarChart3, Settings, Bell, Search,
-  Menu, X, Globe, ChevronDown, LogOut
+  Menu, X, Globe, ChevronDown, LogOut, RefreshCw, Database
 } from 'lucide-react';
 
 export default function Layout() {
@@ -26,6 +27,7 @@ export default function Layout() {
     { path: '/registry', icon: BookOpen, label: t('nav.registry'), badge: null },
     { path: '/employees', icon: Users, label: t('nav.employees'), badge: null },
     { path: '/reports', icon: BarChart3, label: t('nav.reports'), badge: null },
+    { path: '/database', icon: Database, label: 'База данных', badge: null },
   ];
 
   return (
@@ -173,13 +175,21 @@ export default function Layout() {
                     <p className="text-sm font-medium text-gray-900">{currentUser.name}</p>
                     <p className="text-xs text-gray-500">{currentUser.email}</p>
                   </div>
-                  <Link to="/reports" onClick={() => setProfileOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                    <Settings size={16} /> {t('nav.settings')}
-                  </Link>
-                  <button className="flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full">
-                    <LogOut size={16} /> Выйти
-                  </button>
-                </div>
+              <Link to="/reports" onClick={() => setProfileOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                <Settings size={16} /> {t('nav.settings')}
+              </Link>
+              <button 
+                onClick={() => { setProfileOpen(false); resetApp(); }}
+                className="flex items-center gap-2 px-4 py-2 text-sm text-orange-600 hover:bg-orange-50 w-full"
+              >
+                <RefreshCw size={16} /> Сбросить данные
+              </button>
+              <button 
+                onClick={() => { setProfileOpen(false); logout(); }}
+                className="flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full"
+              >
+                <LogOut size={16} /> Выйти
+              </button>                </div>
               )}
             </div>
           </div>

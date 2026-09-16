@@ -2,7 +2,8 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { useState, createContext, useEffect } from 'react';
 import { FileText } from 'lucide-react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { initDB, dbAdd, dbGetByIndex } from './utils/db';
+import { initDatabase } from './backend/database/connection';
+import { seedDatabase } from './backend/database/seed';
 import Layout from './components/Layout';
 import LoginScreen from './components/LoginScreen';
 import HomePage from './pages/HomePage';
@@ -13,6 +14,7 @@ import Meetings from './pages/Meetings';
 import Registry from './pages/Registry';
 import Employees from './pages/Employees';
 import Reports from './pages/Reports';
+import DatabaseViewer from './pages/DatabaseViewer';
 
 // ============ TYPES ============
 export type DocStatus = 'draft' | 'on_approval' | 'on_signing' | 'signed' | 'executed' | 'rejected' | 'archived';
@@ -697,58 +699,16 @@ const DEMO_MEETINGS: Meeting[] = [
   { id: 'm2', title: 'Совещание по проекту модернизации ЦОД', description: 'Обсуждение хода проекта и согласование этапов', date: '2024-12-16', time: '14:00', duration: 60, location: 'Переговорная Б', organizerId: 'e5', participantIds: ['e5', 'e4', 'e3', 'e8'], status: 'planned', agenda: ['Статус проекта', 'Согласование договора', 'Сроки поставки', 'Бюджет'] },
 ];
 
-// Инициализация демо-данных в БД
-async function initializeDemoData() {
+// Инициализация базы данных и демо-данных
+async function initializeDatabase() {
   try {
-    await initDB();
-    
-    // Проверяем, есть ли уже демо-админ
-    const existingAdmins = await dbGetByIndex('users', 'email', 'admin@demo.tm');
-    
-    if (existingAdmins.length === 0) {
-      // Создаем демо-пользователей
-      const demoUsers = [
-        {
-          id: 'demo-admin',
-          email: 'admin@demo.tm',
-          password: 'admin123',
-          name: 'Аннамыратов Сердар',
-          position: 'Генеральный директор',
-          department: 'Руководство',
-          avatar: '👔',
-          role: 'admin',
-          createdAt: new Date().toISOString(),
-        },
-        {
-          id: 'demo-manager',
-          email: 'manager@demo.tm',
-          password: 'manager123',
-          name: 'Мергенджанова Айгуль',
-          position: 'Главный бухгалтер',
-          department: 'Бухгалтерия',
-          avatar: '👩‍💼',
-          role: 'manager',
-          createdAt: new Date().toISOString(),
-        },
-        {
-          id: 'demo-user',
-          email: 'user@demo.tm',
-          password: 'user123',
-          name: 'Бердиев Гурбан',
-          position: 'Специалист',
-          department: 'IT отдел',
-          avatar: '💻',
-          role: 'user',
-          createdAt: new Date().toISOString(),
-        },
-      ];
-
-      for (const user of demoUsers) {
-        await dbAdd('users', user);
-      }
-    }
+    console.log('[App] Initializing database...');
+    await initDatabase();
+    console.log('[App] Database initialized, seeding data...');
+    await seedDatabase();
+    console.log('[App] Database seeding completed');
   } catch (error) {
-    console.error('Error initializing demo data:', error);
+    console.error('[App] Error initializing database:', error);
   }
 }
 
@@ -787,7 +747,7 @@ function App() {
   }, [language]);
 
   useEffect(() => {
-    initializeDemoData().then(() => setDbInitialized(true));
+    initializeDatabase().then(() => setDbInitialized(true));
   }, []);
 
   const t = (key: string): string => {
@@ -838,6 +798,7 @@ function App() {
               <Route path="registry" element={<Registry />} />
               <Route path="employees" element={<Employees />} />
               <Route path="reports" element={<Reports />} />
+              <Route path="database" element={<DatabaseViewer />} />
             </Route>
           </Routes>
         </BrowserRouter>

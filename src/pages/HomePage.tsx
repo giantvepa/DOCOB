@@ -29,13 +29,15 @@ export default function HomePage() {
             {new Date().toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
         </div>
-        <button 
-          onClick={() => setShowCreateDoc(true)}
-          className="btn-primary px-6 py-3 rounded-xl text-white text-sm font-medium flex items-center gap-2"
-        >
-          <Plus size={18} />
-          {t('toolbar.create')}
-        </button>
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={() => setShowCreateDoc(true)}
+            className="btn-primary px-6 py-3 rounded-xl text-white text-sm font-medium flex items-center gap-2"
+          >
+            <Plus size={18} />
+            {t('toolbar.create')}
+          </button>
+        </div>
       </div>
 
       {/* Create Document Modal */}
