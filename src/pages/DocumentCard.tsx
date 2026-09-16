@@ -4,7 +4,7 @@ import { AppContext, DocStatus } from '../App';
 import {
   ArrowLeft, FileText, Clock, CheckCircle2, XCircle, Download,
   Send, MessageSquare, Printer, User, Calendar, Paperclip,
-  ChevronRight, Save, Stamp, ArrowRightLeft
+  ChevronRight, Save, ArrowRightLeft, Stamp
 } from 'lucide-react';
 
 const STATUS_MAP: Record<DocStatus, { label: string; color: string; bg: string }> = {
@@ -21,7 +21,7 @@ export default function DocumentCard() {
   const { id } = useParams<{ id: string }>();
   const { documents, setDocuments, employees, currentUser } = useContext(AppContext);
   const [commentText, setCommentText] = useState('');
-  const [tab, setTab] = useState<'main' | 'content' | 'approval' | 'history' | 'files'>('main');
+  const [tab, setTab] = useState<'main' | 'content' | 'workflow' | 'approval' | 'history' | 'files'>('main');
 
   const doc = documents.find(d => d.id === id);
   if (!doc) return <div className="p-6 text-center"><p className="text-slate-500 text-sm">Документ не найден</p><Link to="/documents" className="text-blue-600 text-xs">← К списку</Link></div>;
@@ -68,6 +68,7 @@ export default function DocumentCard() {
   const tabs = [
     { id: 'main' as const, label: 'Основная информация' },
     { id: 'content' as const, label: 'Содержание' },
+    { id: 'workflow' as const, label: 'Маршрут' },
     { id: 'approval' as const, label: `Согласование (${doc.approvals.length})` },
     { id: 'history' as const, label: `История (${doc.history.length})` },
     { id: 'files' as const, label: 'Файлы' },
@@ -170,6 +171,141 @@ export default function DocumentCard() {
                     </div>
                   </div>
                 )}
+              </div>
+            )}
+
+            {tab === 'workflow' && (
+              <div className="space-y-4">
+                <div className="mb-3">
+                  <p className="text-[10px] text-slate-500 uppercase font-semibold">Схема бизнес-процесса</p>
+                </div>
+                
+                {/* Visual workflow diagram */}
+                <div className="p-6 bg-gradient-to-br from-slate-50 to-blue-50/30 border border-slate-200 rounded">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    {/* Stage 1: Created */}
+                    <div className="flex flex-col items-center">
+                      <div className={`w-16 h-16 rounded-full border-4 flex items-center justify-center ${
+                        doc.status === 'draft' ? 'border-blue-500 bg-blue-100' : 'border-emerald-500 bg-emerald-100'
+                      }`}>
+                        <FileText size={24} className={doc.status === 'draft' ? 'text-blue-600' : 'text-emerald-600'} />
+                      </div>
+                      <p className="text-[11px] font-semibold text-slate-700 mt-2">Создан</p>
+                      <p className="text-[9px] text-slate-500">{fmtDate(doc.createdAt)}</p>
+                    </div>
+
+                    {/* Arrow */}
+                    <div className="flex items-center">
+                      <div className={`w-12 h-1 ${doc.approvals.length > 0 || doc.status !== 'draft' ? 'bg-emerald-400' : 'bg-slate-300'}`}></div>
+                      <div className={`w-0 h-0 border-t-[6px] border-b-[6px] border-l-[10px] border-t-transparent border-b-transparent ${
+                        doc.approvals.length > 0 || doc.status !== 'draft' ? 'border-l-emerald-400' : 'border-l-slate-300'
+                      }`}></div>
+                    </div>
+
+                    {/* Stage 2: Approval */}
+                    <div className="flex flex-col items-center">
+                      <div className={`w-16 h-16 rounded-full border-4 flex items-center justify-center ${
+                        doc.status === 'on_approval' || doc.status === 'on_signing' ? 'border-amber-500 bg-amber-100 animate-pulse' :
+                        doc.status === 'signed' || doc.status === 'executed' ? 'border-emerald-500 bg-emerald-100' :
+                        doc.status === 'rejected' ? 'border-red-500 bg-red-100' :
+                        'border-slate-300 bg-slate-100'
+                      }`}>
+                        <CheckCircle2 size={24} className={
+                          doc.status === 'on_approval' || doc.status === 'on_signing' ? 'text-amber-600' :
+                          doc.status === 'signed' || doc.status === 'executed' ? 'text-emerald-600' :
+                          doc.status === 'rejected' ? 'text-red-600' :
+                          'text-slate-400'
+                        } />
+                      </div>
+                      <p className="text-[11px] font-semibold text-slate-700 mt-2">Согласование</p>
+                      <p className="text-[9px] text-slate-500">
+                        {doc.approvals.filter(a => a.status === 'approved').length}/{doc.approvals.length}
+                      </p>
+                    </div>
+
+                    {/* Arrow */}
+                    <div className="flex items-center">
+                      <div className={`w-12 h-1 ${doc.status === 'signed' || doc.status === 'executed' ? 'bg-emerald-400' : 'bg-slate-300'}`}></div>
+                      <div className={`w-0 h-0 border-t-[6px] border-b-[6px] border-l-[10px] border-t-transparent border-b-transparent ${
+                        doc.status === 'signed' || doc.status === 'executed' ? 'border-l-emerald-400' : 'border-l-slate-300'
+                      }`}></div>
+                    </div>
+
+                    {/* Stage 3: Signed */}
+                    <div className="flex flex-col items-center">
+                      <div className={`w-16 h-16 rounded-full border-4 flex items-center justify-center ${
+                        doc.status === 'signed' ? 'border-blue-500 bg-blue-100 animate-pulse' :
+                        doc.status === 'executed' ? 'border-emerald-500 bg-emerald-100' :
+                        'border-slate-300 bg-slate-100'
+                      }`}>
+                        <Stamp size={24} className={
+                          doc.status === 'signed' ? 'text-blue-600' :
+                          doc.status === 'executed' ? 'text-emerald-600' :
+                          'text-slate-400'
+                        } />
+                      </div>
+                      <p className="text-[11px] font-semibold text-slate-700 mt-2">Подписан</p>
+                      <p className="text-[9px] text-slate-500">ЭП</p>
+                    </div>
+
+                    {/* Arrow */}
+                    <div className="flex items-center">
+                      <div className={`w-12 h-1 ${doc.status === 'executed' ? 'bg-emerald-400' : 'bg-slate-300'}`}></div>
+                      <div className={`w-0 h-0 border-t-[6px] border-b-[6px] border-l-[10px] border-t-transparent border-b-transparent ${
+                        doc.status === 'executed' ? 'border-l-emerald-400' : 'border-l-slate-300'
+                      }`}></div>
+                    </div>
+
+                    {/* Stage 4: Executed */}
+                    <div className="flex flex-col items-center">
+                      <div className={`w-16 h-16 rounded-full border-4 flex items-center justify-center ${
+                        doc.status === 'executed' ? 'border-emerald-500 bg-emerald-100' :
+                        'border-slate-300 bg-slate-100'
+                      }`}>
+                        <CheckCircle2 size={24} className={
+                          doc.status === 'executed' ? 'text-emerald-600' : 'text-slate-400'
+                        } />
+                      </div>
+                      <p className="text-[11px] font-semibold text-slate-700 mt-2">Исполнен</p>
+                      <p className="text-[9px] text-slate-500">—</p>
+                    </div>
+                  </div>
+
+                  {/* Rejected branch */}
+                  {doc.status === 'rejected' && (
+                    <div className="mt-6 pt-4 border-t border-red-200">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-full border-4 border-red-500 bg-red-100 flex items-center justify-center">
+                          <XCircle size={20} className="text-red-600" />
+                        </div>
+                        <div>
+                          <p className="text-[11px] font-semibold text-red-700">Отклонён</p>
+                          <p className="text-[9px] text-red-600">Возврат на доработку</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Legend */}
+                <div className="flex items-center gap-4 text-[10px] text-slate-600">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 rounded-full bg-emerald-100 border-2 border-emerald-500"></div>
+                    <span>Завершено</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 rounded-full bg-amber-100 border-2 border-amber-500"></div>
+                    <span>В процессе</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 rounded-full bg-slate-100 border-2 border-slate-300"></div>
+                    <span>Ожидает</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 rounded-full bg-red-100 border-2 border-red-500"></div>
+                    <span>Отклонено</span>
+                  </div>
+                </div>
               </div>
             )}
 
