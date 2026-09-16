@@ -18,7 +18,7 @@ const PRIORITY_MAP: Record<string, { label: string; color: string; bg: string }>
 };
 
 export default function Tasks() {
-  const { tasks, setTasks, employees, currentUser } = useContext(AppContext);
+  const { tasks, setTasks, employees, currentUser, t } = useContext(AppContext);
   const [filter, setFilter] = useState<'all' | 'my' | 'assigned'>('my');
   const [statusFilter, setStatusFilter] = useState<TaskStatus | 'all'>('all');
 

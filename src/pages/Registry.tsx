@@ -4,7 +4,7 @@ import { AppContext, DocType } from '../App';
 import { Search, Inbox, Send, FileText } from 'lucide-react';
 
 export default function Registry() {
-  const { documents, employees } = useContext(AppContext);
+  const { documents, employees, t } = useContext(AppContext);
   const [typeFilter, setTypeFilter] = useState<DocType | 'all'>('all');
   const [search, setSearch] = useState('');
 

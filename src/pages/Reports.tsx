@@ -3,7 +3,7 @@ import { AppContext } from '../App';
 import { BarChart3, FileText, CheckSquare, Calendar, Users } from 'lucide-react';
 
 export default function Reports() {
-  const { documents, tasks, meetings, employees } = useContext(AppContext);
+  const { documents, tasks, meetings, employees, t } = useContext(AppContext);
 
   const stats = useMemo(() => {
     const byCategory: Record<string, number> = {};

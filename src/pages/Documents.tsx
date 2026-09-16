@@ -20,7 +20,7 @@ const TYPE_LABELS: Record<DocType, string> = {
 };
 
 export default function Documents() {
-  const { documents, employees } = useContext(AppContext);
+  const { documents, employees, t } = useContext(AppContext);
   const [searchParams] = useSearchParams();
   const typeParam = searchParams.get('type') as DocType | null;
   const statusParam = searchParams.get('status') as DocStatus | null;

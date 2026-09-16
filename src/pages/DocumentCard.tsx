@@ -19,7 +19,7 @@ const STATUS_MAP: Record<DocStatus, { label: string; color: string; bg: string }
 
 export default function DocumentCard() {
   const { id } = useParams<{ id: string }>();
-  const { documents, setDocuments, employees, currentUser } = useContext(AppContext);
+  const { documents, setDocuments, employees, currentUser, t } = useContext(AppContext);
   const [commentText, setCommentText] = useState('');
   const [tab, setTab] = useState<'main' | 'content' | 'workflow' | 'approval' | 'history' | 'files'>('main');
 

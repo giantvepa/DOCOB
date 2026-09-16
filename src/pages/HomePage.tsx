@@ -1,7 +1,7 @@
 import { useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { AppContext } from '../App';
-import { AlertTriangle, CheckSquare, Clock, Calendar, FileText, Inbox, Send, CheckCircle2, Users, ArrowRight, Home } from 'lucide-react';
+import { AlertTriangle, CheckSquare, Clock, Calendar, FileText, Inbox, Send, CheckCircle2, Users, Home } from 'lucide-react';
 
 const STATUS_MAP: Record<string, { label: string; color: string; bg: string }> = {
   draft: { label: 'Черновик', color: 'text-[#666]', bg: 'bg-[#e8e8e8]' },
@@ -14,7 +14,7 @@ const STATUS_MAP: Record<string, { label: string; color: string; bg: string }> =
 };
 
 export default function HomePage() {
-  const { documents, tasks, meetings, currentUser } = useContext(AppContext);
+  const { documents, tasks, meetings, currentUser, t } = useContext(AppContext);
 
   const myPendingDocs = documents.filter(d => d.approvals.some(a => a.userId === currentUser.id && a.status === 'waiting'));
   const myTasks = tasks.filter(t => t.assigneeId === currentUser.id && t.status !== 'completed');
@@ -53,7 +53,7 @@ export default function HomePage() {
     <div className="p-2 space-y-2 overflow-y-auto h-full">
       {/* Breadcrumb */}
       <div className="flex items-center gap-1 text-[10px] text-[#666] bg-[#f0f0f0] border border-[#aaa] px-2 py-1 rounded-sm">
-        <Home size={10} /> <span>Рабочий стол</span>
+        <Home size={10} /> <span>{t('home.title')}</span>
         <span className="ml-auto">{new Date().toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span>
       </div>
 

@@ -3,7 +3,7 @@ import { AppContext } from '../App';
 import { Search, Mail, Phone, Building2 } from 'lucide-react';
 
 export default function Employees() {
-  const { employees } = useContext(AppContext);
+  const { employees, t } = useContext(AppContext);
   const [search, setSearch] = useState('');
   const [deptFilter, setDeptFilter] = useState('all');
 

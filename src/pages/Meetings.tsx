@@ -3,7 +3,7 @@ import { AppContext } from '../App';
 import { Calendar, MapPin, Clock, Users, Plus } from 'lucide-react';
 
 export default function Meetings() {
-  const { meetings, employees } = useContext(AppContext);
+  const { meetings, employees, t } = useContext(AppContext);
   const getEmp = (id: string) => employees.find(e => e.id === id);
   const fmtDate = (d: string) => new Date(d).toLocaleDateString('ru-RU', { weekday: 'short', day: 'numeric', month: 'long' });
 
