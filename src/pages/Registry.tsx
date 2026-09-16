@@ -25,61 +25,93 @@ export default function Registry() {
   const internal = documents.filter(d => d.type === 'internal').length;
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="px-2 py-1 bg-gradient-to-r from-[#d0dce8] to-[#e8eef5] border-b border-[#aaa] flex items-center gap-2 flex-shrink-0">
-        <span className="text-[11px] font-bold text-[#333]">Канцелярия</span>
-        <span className="text-[9px] text-[#666]">Регистрация и учёт документов</span>
+    <div className="p-6 space-y-6 animate-fade-in">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">{t('registry.title')}</h1>
+        <p className="text-sm text-gray-500 mt-1">{t('registry.subtitle')}</p>
       </div>
 
-      <div className="px-2 py-1.5 bg-[#f0f0f0] border-b border-[#aaa] flex items-center gap-2 flex-shrink-0">
+      {/* Stats */}
+      <div className="grid grid-cols-3 gap-4">
         {[
-          { label: 'Входящие', value: incoming, icon: Inbox, color: '#0066cc', filter: 'incoming' as DocType },
-          { label: 'Исходящие', value: outgoing, icon: Send, color: '#2e7d32', filter: 'outgoing' as DocType },
-          { label: 'Внутренние', value: internal, icon: FileText, color: '#6a1b9a', filter: 'internal' as DocType },
+          { label: t('nav.incoming'), value: incoming, icon: Inbox, gradient: 'gradient-blue', filter: 'incoming' as DocType },
+          { label: t('nav.outgoing'), value: outgoing, icon: Send, gradient: 'gradient-green', filter: 'outgoing' as DocType },
+          { label: t('nav.internal'), value: internal, icon: FileText, gradient: 'gradient-purple', filter: 'internal' as DocType },
         ].map(s => (
-          <button key={s.label} onClick={() => setTypeFilter(s.filter)} className={`flex items-center gap-1 px-2 py-0.5 border rounded-sm text-[10px] transition ${typeFilter === s.filter ? 'bg-[#cce4ff] border-[#7ba8e0] text-[#003d80]' : 'bg-white border-[#aaa] text-[#333] hover:bg-[#e8f0fb]'}`}>
-            <s.icon size={10} style={{ color: s.color }} />
-            <span className="font-medium">{s.label}</span>
-            <span className="text-[8px] bg-[#ddd] px-0.5 rounded-sm">{s.value}</span>
+          <button
+            key={s.label}
+            onClick={() => setTypeFilter(s.filter)}
+            className={`bg-white rounded-2xl p-6 shadow-modern hover-card text-left transition ${
+              typeFilter === s.filter ? 'ring-2 ring-blue-500' : ''
+            }`}
+          >
+            <div className={`w-12 h-12 rounded-xl ${s.gradient} flex items-center justify-center mb-3`}>
+              <s.icon size={24} className="text-white" />
+            </div>
+            <p className="text-3xl font-bold text-gray-900">{s.value}</p>
+            <p className="text-sm text-gray-500 mt-1">{s.label}</p>
           </button>
         ))}
-        <div className="flex-1" />
+      </div>
+
+      {/* Search */}
+      <div className="bg-white rounded-2xl shadow-modern p-4">
         <div className="relative">
-          <Search size={10} className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[#888]" />
-          <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Поиск..." className="h-[20px] pl-5 pr-1.5 bg-white border border-[#aaa] rounded-sm text-[10px] focus:outline-none focus:border-[#0066cc] w-40" />
+          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={t('common.search')}
+            className="w-full h-10 pl-10 pr-4 modern-input rounded-xl text-sm"
+          />
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto bg-white">
-        <table className="w-full text-[10px] border-collapse">
-          <thead className="sticky top-0 z-10">
-            <tr className="bg-gradient-to-b from-[#e8eef5] to-[#d0dce8] border-b border-[#aaa]">
-              <th className="text-left px-1.5 py-1 font-bold text-[#333] border-r border-[#bbb] w-6">Тип</th>
-              <th className="text-left px-1.5 py-1 font-bold text-[#333] border-r border-[#bbb] w-20">Номер</th>
-              <th className="text-left px-1.5 py-1 font-bold text-[#333] border-r border-[#bbb] w-16">Дата</th>
-              <th className="text-left px-1.5 py-1 font-bold text-[#333] border-r border-[#bbb]">Название</th>
-              <th className="text-left px-1.5 py-1 font-bold text-[#333] border-r border-[#bbb]">Корреспондент</th>
-              <th className="text-left px-1.5 py-1 font-bold text-[#333]">Автор</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((doc, i) => (
-              <tr key={doc.id} className={`${i % 2 === 0 ? 'bg-white' : 'bg-[#f9f9f9]'} hover:bg-[#e3f0ff] border-b border-[#eee]`}>
-                <td className="px-1.5 py-0.5 text-center border-r border-[#eee]">{doc.type === 'incoming' ? '📥' : doc.type === 'outgoing' ? '📤' : '📄'}</td>
-                <td className="px-1.5 py-0.5 border-r border-[#eee]"><Link to={`/documents/${doc.id}`} className="text-[#0066cc] hover:underline font-medium">{doc.number}</Link></td>
-                <td className="px-1.5 py-0.5 text-[#555] border-r border-[#eee]">{fmtDate(doc.createdAt)}</td>
-                <td className="px-1.5 py-0.5 text-[#333] border-r border-[#eee] truncate max-w-[200px]"><Link to={`/documents/${doc.id}`} className="hover:text-[#0066cc]">{doc.title}</Link></td>
-                <td className="px-1.5 py-0.5 text-[#555] border-r border-[#eee]">{doc.correspondent || '—'}</td>
-                <td className="px-1.5 py-0.5 text-[#555]">{getEmp(doc.authorId)?.name.split(' ').slice(0, 2).join(' ')}</td>
+      {/* Table */}
+      <div className="bg-white rounded-2xl shadow-modern overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full modern-table">
+            <thead>
+              <tr>
+                <th className="px-6 py-4 text-left">{t('docs.type')}</th>
+                <th className="px-6 py-4 text-left">{t('docs.number')}</th>
+                <th className="px-6 py-4 text-left">{t('docs.date')}</th>
+                <th className="px-6 py-4 text-left">{t('registry.name')}</th>
+                <th className="px-6 py-4 text-left">{t('docs.correspondent')}</th>
+                <th className="px-6 py-4 text-left">{t('docs.author')}</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-        {filtered.length === 0 && <div className="text-center py-8 text-[10px] text-[#888]">Документы не найдены</div>}
-      </div>
-
-      <div className="px-2 py-0.5 bg-[#f0f0f0] border-t border-[#aaa] text-[9px] text-[#555] flex-shrink-0">
-        Записей: {filtered.length}
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {filtered.map(doc => (
+                <tr key={doc.id} className="hover:bg-gray-50 transition">
+                  <td className="px-6 py-4 text-center text-xl">
+                    {doc.type === 'incoming' ? '📥' : doc.type === 'outgoing' ? '📤' : '📄'}
+                  </td>
+                  <td className="px-6 py-4">
+                    <Link to={`/documents/${doc.id}`} className="text-sm font-medium text-blue-600 hover:text-blue-700">
+                      {doc.number}
+                    </Link>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-500">{fmtDate(doc.createdAt)}</td>
+                  <td className="px-6 py-4">
+                    <Link to={`/documents/${doc.id}`} className="text-sm text-gray-900 hover:text-blue-600 transition truncate block max-w-xs">
+                      {doc.title}
+                    </Link>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-600">{doc.correspondent || '—'}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600">{getEmp(doc.authorId)?.name.split(' ').slice(0, 2).join(' ')}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {filtered.length === 0 && (
+          <div className="py-16 text-center">
+            <Inbox size={48} className="mx-auto text-gray-300 mb-3" />
+            <p className="text-sm text-gray-500">{t('docs.not_found')}</p>
+          </div>
+        )}
       </div>
     </div>
   );

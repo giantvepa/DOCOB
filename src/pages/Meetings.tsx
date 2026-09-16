@@ -13,72 +13,96 @@ export default function Meetings() {
   });
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="px-2 py-1 bg-gradient-to-r from-[#d0dce8] to-[#e8eef5] border-b border-[#aaa] flex items-center gap-2 flex-shrink-0">
-        <span className="text-[11px] font-bold text-[#333]">Совещания</span>
-        <span className="text-[9px] text-[#666]">({meetings.length})</span>
-        <div className="ml-auto">
-          <button className="flex items-center gap-1 px-2 py-0.5 text-[10px] bg-[#0066cc] hover:bg-[#0055aa] text-white rounded-sm border border-[#004499]">
-            <Plus size={10} /> Создать
-          </button>
+    <div className="p-6 space-y-6 animate-fade-in">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">{t('meetings.title')}</h1>
+          <p className="text-sm text-gray-500 mt-1">{meetings.length} {t('common.records')}</p>
         </div>
+        <button className="btn-primary px-6 py-3 rounded-xl text-white text-sm font-medium flex items-center gap-2">
+          <Plus size={18} />
+          {t('meetings.create')}
+        </button>
       </div>
 
-      <div className="flex-1 overflow-auto p-2 bg-[#ece9e0]">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-          {sorted.map(m => {
-            const org = getEmp(m.organizerId);
-            const participants = m.participantIds.map(id => getEmp(id)).filter(Boolean);
-            return (
-              <div key={m.id} className="bg-white border border-[#aaa] shadow-sm">
-                <div className="px-2 py-1 bg-gradient-to-r from-[#f8f9fb] to-white border-b border-[#ccc] flex items-start justify-between">
-                  <div>
-                    <h3 className="text-[11px] font-bold text-[#333]">{m.title}</h3>
-                    <p className="text-[9px] text-[#666] mt-0.5">{m.description}</p>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {sorted.map(m => {
+          const org = getEmp(m.organizerId);
+          const participants = m.participantIds.map(id => getEmp(id)).filter(Boolean);
+          return (
+            <div key={m.id} className="bg-white rounded-2xl shadow-modern hover-card overflow-hidden">
+              <div className="p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <h3 className="text-sm font-semibold text-gray-900 mb-1">{m.title}</h3>
+                    <p className="text-xs text-gray-500">{m.description}</p>
                   </div>
-                  <span className={`px-1 py-0.5 rounded-sm text-[8px] font-medium flex-shrink-0 ${
-                    m.status === 'planned' ? 'bg-[#e3f2fd] text-[#0066cc]' :
-                    m.status === 'in_progress' ? 'bg-[#fff3e0] text-[#cc6600]' :
-                    m.status === 'completed' ? 'bg-[#e8f5e9] text-[#2e7d32]' :
-                    'bg-[#f5f5f5] text-[#666]'
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                    m.status === 'planned' ? 'bg-blue-100 text-blue-700' :
+                    m.status === 'in_progress' ? 'bg-amber-100 text-amber-700' :
+                    m.status === 'completed' ? 'bg-green-100 text-green-700' :
+                    'bg-gray-100 text-gray-700'
                   }`}>
-                    {m.status === 'planned' ? 'Запланировано' : m.status === 'in_progress' ? 'Идёт' : m.status === 'completed' ? 'Завершено' : 'Отменено'}
+                    {m.status === 'planned' ? t('meetings.planned') : 
+                     m.status === 'in_progress' ? t('meetings.in_progress') : 
+                     m.status === 'completed' ? t('meetings.completed') : 
+                     t('meetings.cancelled')}
                   </span>
                 </div>
-                <div className="p-2 space-y-1.5">
-                  <div className="flex flex-wrap items-center gap-2 text-[9px] text-[#555]">
-                    <span className="flex items-center gap-0.5"><Calendar size={9} />{fmtDate(m.date)}</span>
-                    <span className="flex items-center gap-0.5"><Clock size={9} />{m.time} ({m.duration} мин)</span>
-                    <span className="flex items-center gap-0.5"><MapPin size={9} />{m.location}</span>
-                  </div>
-                  <div className="flex items-center justify-between pt-1.5 border-t border-[#eee]">
-                    <div className="flex items-center gap-1">
-                      <span className="text-[9px] text-[#666]">Организатор:</span>
-                      <span className="text-[9px] font-medium text-[#333]">{org?.name.split(' ').slice(0, 2).join(' ')}</span>
-                    </div>
-                    <div className="flex -space-x-1">
-                      {participants.slice(0, 5).map(p => (
-                        <div key={p!.id} className="w-5 h-5 rounded-sm bg-[#e0e0e0] border border-white flex items-center justify-center text-[8px]" title={p!.name}>{p!.avatar}</div>
-                      ))}
-                    </div>
-                  </div>
-                  {m.agenda.length > 0 && (
-                    <div className="pt-1.5 border-t border-[#eee]">
-                      <p className="text-[8px] text-[#666] uppercase font-bold mb-0.5">Повестка</p>
-                      <ul className="space-y-0.5">
-                        {m.agenda.map((item, i) => (
-                          <li key={i} className="text-[9px] text-[#555] flex items-start gap-1">
-                            <span className="text-[#0066cc] mt-0.5">{i + 1}.</span> {item}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+                <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 mb-4">
+                  <span className="flex items-center gap-1">
+                    <Calendar size={14} />
+                    {fmtDate(m.date)}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Clock size={14} />
+                    {m.time} ({m.duration} мин)
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <MapPin size={14} />
+                    {m.location}
+                  </span>
                 </div>
+                <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500">{t('meetings.organizer')}:</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-[10px] font-bold">
+                        {org?.name.charAt(0)}
+                      </div>
+                      <span className="text-xs font-medium text-gray-700">{org?.name.split(' ').slice(0, 2).join(' ')}</span>
+                    </div>
+                  </div>
+                  <div className="flex -space-x-2">
+                    {participants.slice(0, 5).map(p => (
+                      <div key={p!.id} className="w-7 h-7 rounded-full bg-gradient-to-br from-gray-300 to-gray-400 border-2 border-white flex items-center justify-center text-white text-[9px] font-bold" title={p!.name}>
+                        {p!.name.charAt(0)}
+                      </div>
+                    ))}
+                    {participants.length > 5 && (
+                      <div className="w-7 h-7 rounded-full bg-gray-200 border-2 border-white flex items-center justify-center text-gray-600 text-[9px] font-bold">
+                        +{participants.length - 5}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                {m.agenda.length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-gray-100">
+                    <p className="text-xs font-semibold text-gray-700 mb-2">{t('meetings.agenda')}</p>
+                    <ul className="space-y-1">
+                      {m.agenda.map((item, i) => (
+                        <li key={i} className="text-xs text-gray-600 flex items-start gap-2">
+                          <span className="text-blue-600 font-medium">{i + 1}.</span>
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
-            );
-          })}
-        </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
