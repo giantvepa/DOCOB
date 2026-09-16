@@ -6,7 +6,7 @@ import { resetApp } from '../utils/clearData';
 import {
   LayoutDashboard, FileText, CheckSquare, Calendar,
   BookOpen, Users, BarChart3, Settings, Bell, Search,
-  Menu, X, Globe, ChevronDown, LogOut, RefreshCw
+  Menu, X, Globe, ChevronDown, LogOut, RefreshCw, Database
 } from 'lucide-react';
 
 export default function Layout() {
@@ -27,6 +27,7 @@ export default function Layout() {
     { path: '/registry', icon: BookOpen, label: t('nav.registry'), badge: null },
     { path: '/employees', icon: Users, label: t('nav.employees'), badge: null },
     { path: '/reports', icon: BarChart3, label: t('nav.reports'), badge: null },
+    { path: '/database', icon: Database, label: 'База данных', badge: null },
   ];
 
   return (

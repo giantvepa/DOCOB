@@ -14,6 +14,7 @@ import Meetings from './pages/Meetings';
 import Registry from './pages/Registry';
 import Employees from './pages/Employees';
 import Reports from './pages/Reports';
+import DatabaseViewer from './pages/DatabaseViewer';
 
 // ============ TYPES ============
 export type DocStatus = 'draft' | 'on_approval' | 'on_signing' | 'signed' | 'executed' | 'rejected' | 'archived';
@@ -797,6 +798,7 @@ function App() {
               <Route path="registry" element={<Registry />} />
               <Route path="employees" element={<Employees />} />
               <Route path="reports" element={<Reports />} />
+              <Route path="database" element={<DatabaseViewer />} />
             </Route>
           </Routes>
         </BrowserRouter>
