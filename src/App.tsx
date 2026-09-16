@@ -1,10 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { useState, createContext, useEffect } from 'react';
-import { FileText } from 'lucide-react';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { initDB, dbAdd, dbGetByIndex } from './utils/db';
 import Layout from './components/Layout';
-import LoginScreen from './components/LoginScreen';
 import HomePage from './pages/HomePage';
 import Documents from './pages/Documents';
 import DocumentCard from './pages/DocumentCard';
@@ -697,72 +693,6 @@ const DEMO_MEETINGS: Meeting[] = [
   { id: 'm2', title: 'Совещание по проекту модернизации ЦОД', description: 'Обсуждение хода проекта и согласование этапов', date: '2024-12-16', time: '14:00', duration: 60, location: 'Переговорная Б', organizerId: 'e5', participantIds: ['e5', 'e4', 'e3', 'e8'], status: 'planned', agenda: ['Статус проекта', 'Согласование договора', 'Сроки поставки', 'Бюджет'] },
 ];
 
-// Инициализация демо-данных в БД
-async function initializeDemoData() {
-  try {
-    await initDB();
-    
-    // Проверяем, есть ли уже демо-админ
-    const existingAdmins = await dbGetByIndex('users', 'email', 'admin@demo.tm');
-    
-    if (existingAdmins.length === 0) {
-      // Создаем демо-пользователей
-      const demoUsers = [
-        {
-          id: 'demo-admin',
-          email: 'admin@demo.tm',
-          password: 'admin123',
-          name: 'Аннамыратов Сердар',
-          position: 'Генеральный директор',
-          department: 'Руководство',
-          avatar: '👔',
-          role: 'admin',
-          createdAt: new Date().toISOString(),
-        },
-        {
-          id: 'demo-manager',
-          email: 'manager@demo.tm',
-          password: 'manager123',
-          name: 'Мергенджанова Айгуль',
-          position: 'Главный бухгалтер',
-          department: 'Бухгалтерия',
-          avatar: '👩‍💼',
-          role: 'manager',
-          createdAt: new Date().toISOString(),
-        },
-        {
-          id: 'demo-user',
-          email: 'user@demo.tm',
-          password: 'user123',
-          name: 'Бердиев Гурбан',
-          position: 'Специалист',
-          department: 'IT отдел',
-          avatar: '💻',
-          role: 'user',
-          createdAt: new Date().toISOString(),
-        },
-      ];
-
-      for (const user of demoUsers) {
-        await dbAdd('users', user);
-      }
-    }
-  } catch (error) {
-    console.error('Error initializing demo data:', error);
-  }
-}
-
-// Компонент для защищенных маршрутов
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuth();
-  
-  if (!isAuthenticated) {
-    return <LoginScreen />;
-  }
-  
-  return <>{children}</>;
-}
-
 function App() {
   const [documents, setDocuments] = useState<Document[]>(() => {
     const s = localStorage.getItem('esasy-pikir-docs');
@@ -780,15 +710,10 @@ function App() {
     const saved = localStorage.getItem('esasy-pikir-lang') as Language;
     return saved || 'ru';
   });
-  const [dbInitialized, setDbInitialized] = useState(false);
 
   useEffect(() => {
     localStorage.setItem('esasy-pikir-lang', language);
   }, [language]);
-
-  useEffect(() => {
-    initializeDemoData().then(() => setDbInitialized(true));
-  }, []);
 
   const t = (key: string): string => {
     return TRANSLATIONS[language][key] || key;
@@ -810,39 +735,23 @@ function App() {
     localStorage.setItem('esasy-pikir-meetings', JSON.stringify(toSave));
   };
 
-  if (!dbInitialized) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50">
-        <div className="text-center">
-          <div className="w-16 h-16 rounded-2xl gradient-blue flex items-center justify-center mx-auto mb-4 animate-pulse">
-            <FileText size={32} className="text-white" />
-          </div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">СЭД "ЭСАСЫ ПИКИР"</h2>
-          <p className="text-sm text-gray-500">Инициализация базы данных...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <AuthProvider>
-      <AppContext.Provider value={{ documents, setDocuments: updateDocs, tasks, setTasks: updateTasks, meetings, setMeetings: updateMeetings, employees: EMPLOYEES, currentUser: CURRENT_USER, language, setLanguage, t }}>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-              <Route index element={<HomePage />} />
-              <Route path="documents" element={<Documents />} />
-              <Route path="documents/:id" element={<DocumentCard />} />
-              <Route path="tasks" element={<Tasks />} />
-              <Route path="meetings" element={<Meetings />} />
-              <Route path="registry" element={<Registry />} />
-              <Route path="employees" element={<Employees />} />
-              <Route path="reports" element={<Reports />} />
-            </Route>
-          </Routes>
-        </BrowserRouter>
-      </AppContext.Provider>
-    </AuthProvider>
+    <AppContext.Provider value={{ documents, setDocuments: updateDocs, tasks, setTasks: updateTasks, meetings, setMeetings: updateMeetings, employees: EMPLOYEES, currentUser: CURRENT_USER, language, setLanguage, t }}>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Layout />}>
+            <Route index element={<HomePage />} />
+            <Route path="documents" element={<Documents />} />
+            <Route path="documents/:id" element={<DocumentCard />} />
+            <Route path="tasks" element={<Tasks />} />
+            <Route path="meetings" element={<Meetings />} />
+            <Route path="registry" element={<Registry />} />
+            <Route path="employees" element={<Employees />} />
+            <Route path="reports" element={<Reports />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </AppContext.Provider>
   );
 }
 

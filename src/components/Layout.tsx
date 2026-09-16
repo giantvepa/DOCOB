@@ -1,7 +1,6 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useContext, useState } from 'react';
 import { AppContext } from '../App';
-import { useAuth } from '../contexts/AuthContext';
 import {
   LayoutDashboard, FileText, CheckSquare, Calendar,
   BookOpen, Users, BarChart3, Settings, Bell, Search,
@@ -10,7 +9,6 @@ import {
 
 export default function Layout() {
   const { currentUser, documents, tasks, language, setLanguage, t } = useContext(AppContext);
-  const { user: authUser, logout } = useAuth();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -78,19 +76,12 @@ export default function Layout() {
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-sm font-bold">
-              {authUser?.avatar || currentUser.avatar}
+              {currentUser.name.charAt(0)}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">{authUser?.name || currentUser.name}</p>
-              <p className="text-xs text-gray-500 truncate">{authUser?.position || currentUser.position}</p>
+              <p className="text-sm font-medium text-gray-900 truncate">{currentUser.name}</p>
+              <p className="text-xs text-gray-500 truncate">{currentUser.position}</p>
             </div>
-            <button
-              onClick={logout}
-              className="w-8 h-8 rounded-lg hover:bg-red-50 flex items-center justify-center transition text-red-500"
-              title="Выйти"
-            >
-              <LogOut size={16} />
-            </button>
           </div>
         </div>
       </aside>

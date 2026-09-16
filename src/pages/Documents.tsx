@@ -2,7 +2,6 @@ import { useContext, useState, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { AppContext, DocStatus, DocCategory, DocType } from '../App';
 import { Search, Plus, Filter, Eye, Download, MoreVertical, FileText, Calendar, User } from 'lucide-react';
-import CreateDocumentModal from '../components/CreateDocumentModal';
 
 const STATUS_CONFIG: Record<DocStatus, { label: string; color: string; bg: string; dot: string }> = {
   draft: { label: 'Черновик', color: 'text-gray-600', bg: 'bg-gray-100', dot: 'bg-gray-400' },
@@ -24,7 +23,6 @@ export default function Documents() {
   const [typeFilter, setTypeFilter] = useState<DocType | 'all'>(typeParam || 'all');
   const [statusFilter, setStatusFilter] = useState<DocStatus | 'all'>(statusParam || 'all');
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
-  const [showCreateDoc, setShowCreateDoc] = useState(false);
 
   const filtered = useMemo(() => {
     let result = [...documents];
@@ -52,17 +50,11 @@ export default function Documents() {
           <h1 className="text-2xl font-bold text-gray-900">{t('docs.title')}</h1>
           <p className="text-sm text-gray-500 mt-1">{filtered.length} {t('common.records')}</p>
         </div>
-        <button 
-          onClick={() => setShowCreateDoc(true)}
-          className="btn-primary px-6 py-3 rounded-xl text-white text-sm font-medium flex items-center gap-2"
-        >
+        <button className="btn-primary px-6 py-3 rounded-xl text-white text-sm font-medium flex items-center gap-2">
           <Plus size={18} />
           {t('toolbar.create')}
         </button>
       </div>
-
-      {/* Create Document Modal */}
-      {showCreateDoc && <CreateDocumentModal onClose={() => setShowCreateDoc(false)} />}
 
       {/* Filters */}
       <div className="bg-white rounded-2xl shadow-modern p-4">
