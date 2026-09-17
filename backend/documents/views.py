@@ -2,23 +2,10 @@ from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.utils import timezone
-from drf_spectacular.utils import extend_schema, extend_schema_view
-
 from .models import Document, DocumentComment, DocumentHistory, ApprovalStep
-from .serializers import (
-    DocumentSerializer, DocumentDetailSerializer,
-    DocumentCommentSerializer, DocumentHistorySerializer, ApprovalStepSerializer
-)
+from .serializers import DocumentSerializer, DocumentDetailSerializer, DocumentCommentSerializer
 
 
-@extend_schema_view(
-    list=extend_schema(summary='Список документов'),
-    retrieve=extend_schema(summary='Документ по ID'),
-    create=extend_schema(summary='Создать документ'),
-    update=extend_schema(summary='Обновить документ'),
-    partial_update=extend_schema(summary='Частично обновить документ'),
-    destroy=extend_schema(summary='Удалить документ'),
-)
 class DocumentViewSet(viewsets.ModelViewSet):
     """ViewSet для документов"""
     queryset = Document.objects.all()
@@ -34,7 +21,14 @@ class DocumentViewSet(viewsets.ModelViewSet):
         return DocumentSerializer
     
     def perform_create(self, serializer):
-        document = serializer.save(author=self.user)
+        document = serializer.save(author=self.request.user)
+        
+        # Генерируем номер документа
+        if not document.number:
+            year = timezone.now().year
+            count = Document.objects.filter(created_at__year=year).count()
+            document.number = f"DOC-{year}-{count:04d}"
+            document.save()
         
         # Записываем в историю
         DocumentHistory.objects.create(
@@ -46,8 +40,6 @@ class DocumentViewSet(viewsets.ModelViewSet):
     
     def perform_update(self, serializer):
         document = serializer.save()
-        
-        # Записываем в историю
         DocumentHistory.objects.create(
             document=document,
             user=self.request.user,
@@ -56,7 +48,6 @@ class DocumentViewSet(viewsets.ModelViewSet):
         )
     
     def perform_destroy(self, instance):
-        # Записываем в историю перед удалением
         DocumentHistory.objects.create(
             document=instance,
             user=self.request.user,
@@ -65,7 +56,6 @@ class DocumentViewSet(viewsets.ModelViewSet):
         )
         instance.delete()
     
-    @extend_schema(summary='Отправить на согласование')
     @action(detail=True, methods=['post'])
     def send_to_approval(self, request, pk=None):
         """Отправить документ на согласование"""
@@ -77,7 +67,6 @@ class DocumentViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Получаем список согласующих из запроса
         approvers_ids = request.data.get('approvers', [])
         
         if not approvers_ids:
@@ -86,7 +75,6 @@ class DocumentViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Создаём шаги согласования
         for idx, user_id in enumerate(approvers_ids):
             ApprovalStep.objects.create(
                 document=document,
@@ -95,11 +83,9 @@ class DocumentViewSet(viewsets.ModelViewSet):
                 status='waiting'
             )
         
-        # Обновляем статус документа
         document.status = 'on_approval'
         document.save()
         
-        # Записываем в историю
         DocumentHistory.objects.create(
             document=document,
             user=request.user,
@@ -109,13 +95,11 @@ class DocumentViewSet(viewsets.ModelViewSet):
         
         return Response(DocumentDetailSerializer(document).data)
     
-    @extend_schema(summary='Согласовать документ')
     @action(detail=True, methods=['post'])
     def approve(self, request, pk=None):
         """Согласовать документ"""
         document = self.get_object()
         
-        # Находим шаг согласования для текущего пользователя
         approval = document.approvals.filter(user=request.user, status='waiting').first()
         
         if not approval:
@@ -126,20 +110,17 @@ class DocumentViewSet(viewsets.ModelViewSet):
         
         comment = request.data.get('comment', '')
         
-        # Обновляем шаг
         approval.status = 'approved'
         approval.comment = comment
         approval.completed_at = timezone.now()
         approval.save()
         
-        # Проверяем, все ли согласовали
         all_approved = not document.approvals.filter(status='waiting').exists()
         
         if all_approved:
             document.status = 'signed'
             document.save()
         
-        # Записываем в историю
         DocumentHistory.objects.create(
             document=document,
             user=request.user,
@@ -149,7 +130,6 @@ class DocumentViewSet(viewsets.ModelViewSet):
         
         return Response(DocumentDetailSerializer(document).data)
     
-    @extend_schema(summary='Отклонить документ')
     @action(detail=True, methods=['post'])
     def reject(self, request, pk=None):
         """Отклонить документ"""
@@ -165,17 +145,14 @@ class DocumentViewSet(viewsets.ModelViewSet):
         
         comment = request.data.get('comment', '')
         
-        # Обновляем шаг
         approval.status = 'rejected'
         approval.comment = comment
         approval.completed_at = timezone.now()
         approval.save()
         
-        # Обновляем статус документа
         document.status = 'rejected'
         document.save()
         
-        # Записываем в историю
         DocumentHistory.objects.create(
             document=document,
             user=request.user,
@@ -185,7 +162,6 @@ class DocumentViewSet(viewsets.ModelViewSet):
         
         return Response(DocumentDetailSerializer(document).data)
     
-    @extend_schema(summary='Добавить комментарий')
     @action(detail=True, methods=['post'])
     def add_comment(self, request, pk=None):
         """Добавить комментарий к документу"""
@@ -195,7 +171,6 @@ class DocumentViewSet(viewsets.ModelViewSet):
         if serializer.is_valid():
             serializer.save(document=document, author=request.user)
             
-            # Записываем в историю
             DocumentHistory.objects.create(
                 document=document,
                 user=request.user,
@@ -206,7 +181,6 @@ class DocumentViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    @extend_schema(summary='Архивировать документ')
     @action(detail=True, methods=['post'])
     def archive(self, request, pk=None):
         """Архивировать документ"""
