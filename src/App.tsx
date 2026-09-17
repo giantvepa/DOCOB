@@ -200,7 +200,10 @@ export const AppContext = createContext<AppContextType>({} as AppContextType);
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
 
+  console.log('🛡️ ProtectedRoute:', { isLoading, isAuthenticated });
+
   if (isLoading) {
+    console.log('⏳ Showing loading screen...');
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50">
         <div className="text-center">
@@ -213,9 +216,11 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!isAuthenticated) {
+    console.log('🔒 Showing login screen...');
     return <LoginScreen />;
   }
 
+  console.log('✅ Showing protected content');
   return <>{children}</>;
 }
 
@@ -242,19 +247,33 @@ function AppContent() {
 
   const refreshData = useCallback(async () => {
     try {
+      console.log('🔄 Loading data from Django API...');
       const [docs, tasksData, meetingsData, usersData] = await Promise.all([
-        djangoApi.getDocuments().catch(() => []),
-        djangoApi.getTasks().catch(() => []),
-        djangoApi.getMeetings().catch(() => []),
-        djangoApi.getUsers().catch(() => []),
+        djangoApi.getDocuments().catch((err) => {
+          console.error('❌ Error loading documents:', err);
+          return [];
+        }),
+        djangoApi.getTasks().catch((err) => {
+          console.error('❌ Error loading tasks:', err);
+          return [];
+        }),
+        djangoApi.getMeetings().catch((err) => {
+          console.error('❌ Error loading meetings:', err);
+          return [];
+        }),
+        djangoApi.getUsers().catch((err) => {
+          console.error('❌ Error loading users:', err);
+          return [];
+        }),
       ]);
+      console.log('✅ Data loaded:', { docs: docs.length, tasks: tasksData.length, meetings: meetingsData.length, users: usersData.length });
       setDocuments(docs);
       setTasks(tasksData);
       setMeetings(meetingsData);
       setEmployees(usersData);
       setDataLoaded(true);
     } catch (error) {
-      console.error('Error loading data:', error);
+      console.error('❌ Error loading data:', error);
       setDataLoaded(true);
     }
   }, []);

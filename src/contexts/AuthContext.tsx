@@ -38,18 +38,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const checkAuth = async () => {
+    console.log('🔐 Checking authentication...');
     const token = djangoApi.getToken();
+    console.log('🔑 Token found:', !!token);
+    
     if (token) {
       try {
+        console.log('📡 Fetching user data...');
         const userData = await djangoApi.getMe();
+        console.log('✅ User data loaded:', userData);
         setUser(userData);
         setIsAuthenticated(true);
       } catch (error) {
+        console.error('❌ Error fetching user data:', error);
         djangoApi.clearToken();
         setUser(null);
         setIsAuthenticated(false);
       }
     }
+    console.log('🏁 Setting isLoading to false');
     setIsLoading(false);
   };
 
