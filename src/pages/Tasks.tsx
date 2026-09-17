@@ -1,9 +1,9 @@
 import { useContext, useState } from 'react';
-import { AppContext, TaskStatus } from '../App';
+import { AppContext } from '../App';
+import { useAuth } from '../contexts/AuthContext';
 import { CheckSquare, Plus, CheckCircle2, Calendar, User, Clock } from 'lucide-react';
-import CreateTaskModal from '../components/CreateTaskModal';
 
-const STATUS_CONFIG: Record<TaskStatus, { label: string; color: string; bg: string }> = {
+const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
   new: { label: 'Новая', color: 'text-blue-600', bg: 'bg-blue-100' },
   in_progress: { label: 'В работе', color: 'text-amber-600', bg: 'bg-amber-100' },
   completed: { label: 'Выполнена', color: 'text-green-600', bg: 'bg-green-100' },
@@ -19,26 +19,30 @@ const PRIORITY_CONFIG: Record<string, { label: string; color: string; bg: string
 };
 
 export default function Tasks() {
-  const { tasks, setTasks, employees, currentUser, t } = useContext(AppContext);
+  const { tasks, setTasks, employees, t } = useContext(AppContext);
+  const { user } = useAuth();
   const [filter, setFilter] = useState<'all' | 'my' | 'assigned'>('my');
-  const [statusFilter, setStatusFilter] = useState<TaskStatus | 'all'>('all');
-  const [showCreateTask, setShowCreateTask] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
 
   const filtered = tasks.filter(task => {
-    if (filter === 'my' && task.assigneeId !== currentUser.id) return false;
-    if (filter === 'assigned' && task.authorId !== currentUser.id) return false;
+    if (filter === 'my' && task.assigneeId !== user?.id) return false;
+    if (filter === 'assigned' && task.authorId !== user?.id) return false;
     if (statusFilter !== 'all' && task.status !== statusFilter) return false;
     return true;
   }).sort((a, b) => {
     const priorityOrder = { critical: 0, high: 1, normal: 2, low: 3 };
-    return priorityOrder[a.priority as keyof typeof priorityOrder] - priorityOrder[b.priority as keyof typeof priorityOrder];
+    return priorityOrder[a.priority] - priorityOrder[b.priority];
   });
 
   const fmtDate = (d: string) => new Date(d).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
   const getEmp = (id: string) => employees.find(e => e.id === id);
 
   const toggleComplete = (taskId: string) => {
-    setTasks(prev => prev.map(task => task.id === taskId ? { ...task, status: task.status === 'completed' ? 'in_progress' as TaskStatus : 'completed' as TaskStatus, completedAt: task.status === 'completed' ? undefined : new Date().toISOString() } : task));
+    setTasks(prev => prev.map(task => 
+      task.id === taskId 
+        ? { ...task, status: task.status === 'completed' ? 'in_progress' : 'completed', completedAt: task.status === 'completed' ? undefined : new Date().toISOString() }
+        : task
+    ));
   };
 
   return (
@@ -48,17 +52,11 @@ export default function Tasks() {
           <h1 className="text-2xl font-bold text-gray-900">{t('tasks.title')}</h1>
           <p className="text-sm text-gray-500 mt-1">{filtered.length} {t('common.records')}</p>
         </div>
-        <button 
-          onClick={() => setShowCreateTask(true)}
-          className="btn-primary px-6 py-3 rounded-xl text-white text-sm font-medium flex items-center gap-2"
-        >
+        <button className="btn-primary px-6 py-3 rounded-xl text-white text-sm font-medium flex items-center gap-2">
           <Plus size={18} />
           {t('tasks.new_task')}
         </button>
       </div>
-
-      {/* Create Task Modal */}
-      {showCreateTask && <CreateTaskModal onClose={() => setShowCreateTask(false)} />}
 
       {/* Filters */}
       <div className="bg-white rounded-2xl shadow-modern p-4">
@@ -82,8 +80,8 @@ export default function Tasks() {
           </div>
           <select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as TaskStatus | 'all')}
-            className="h-10 px-4 modern-input modern-select rounded-xl text-sm"
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="h-10 px-4 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
           >
             <option value="all">{t('tasks.all_statuses')}</option>
             <option value="new">{t('task.new')}</option>
@@ -104,8 +102,8 @@ export default function Tasks() {
             </div>
           ) : (
             filtered.map(task => {
-              const statusConf = STATUS_CONFIG[task.status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.new;
-              const priorityConf = PRIORITY_CONFIG[task.priority as keyof typeof PRIORITY_CONFIG] || PRIORITY_CONFIG.normal;
+              const statusConf = STATUS_CONFIG[task.status] || STATUS_CONFIG.new;
+              const priorityConf = PRIORITY_CONFIG[task.priority] || PRIORITY_CONFIG.normal;
               const assignee = getEmp(task.assigneeId || task.assignee);
               return (
                 <div key={task.id} className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition">
@@ -130,11 +128,11 @@ export default function Tasks() {
                       </span>
                       <span className="text-xs text-gray-500 flex items-center gap-1">
                         <User size={12} />
-                        {assignee?.name.split(' ').slice(0, 2).join(' ')}
+                        {assignee ? `${assignee.first_name || assignee.name || ''} ${assignee.last_name || ''}`.trim() : '—'}
                       </span>
                       <span className="text-xs text-gray-500 flex items-center gap-1">
                         <Calendar size={12} />
-                        {fmtDate(task.dueDate)}
+                        {fmtDate(task.dueDate || task.due_date)}
                       </span>
                     </div>
                   </div>

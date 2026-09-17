@@ -1,11 +1,9 @@
-import { useContext, useState } from 'react';
+import { useContext } from 'react';
 import { AppContext } from '../App';
 import { Calendar, MapPin, Clock, Users, Plus } from 'lucide-react';
-import CreateMeetingModal from '../components/CreateMeetingModal';
 
 export default function Meetings() {
   const { meetings, employees, t } = useContext(AppContext);
-  const [showCreateMeeting, setShowCreateMeeting] = useState(false);
   const getEmp = (id: string) => employees.find(e => e.id === id);
   const fmtDate = (d: string) => new Date(d).toLocaleDateString('ru-RU', { weekday: 'short', day: 'numeric', month: 'long' });
 
@@ -21,17 +19,11 @@ export default function Meetings() {
           <h1 className="text-2xl font-bold text-gray-900">{t('meetings.title')}</h1>
           <p className="text-sm text-gray-500 mt-1">{meetings.length} {t('common.records')}</p>
         </div>
-        <button 
-          onClick={() => setShowCreateMeeting(true)}
-          className="btn-primary px-6 py-3 rounded-xl text-white text-sm font-medium flex items-center gap-2"
-        >
+        <button className="btn-primary px-6 py-3 rounded-xl text-white text-sm font-medium flex items-center gap-2">
           <Plus size={18} />
           {t('meetings.create')}
         </button>
       </div>
-
-      {/* Create Meeting Modal */}
-      {showCreateMeeting && <CreateMeetingModal onClose={() => setShowCreateMeeting(false)} />}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {sorted.map(m => {
@@ -76,15 +68,17 @@ export default function Meetings() {
                     <span className="text-xs text-gray-500">{t('meetings.organizer')}:</span>
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-[10px] font-bold">
-                        {(org?.name || org?.first_name || '?').charAt(0)}
+                        {(org?.first_name || org?.name || '?').charAt(0)}
                       </div>
-                      <span className="text-xs font-medium text-gray-700">{(org?.name || `${org?.first_name || ''} ${org?.last_name || ''}`.trim() || 'Неизвестно').split(' ').slice(0, 2).join(' ')}</span>
+                      <span className="text-xs font-medium text-gray-700">
+                        {org ? `${org.first_name || org.name || ''} ${org.last_name || ''}`.trim().split(' ').slice(0, 2).join(' ') : '—'}
+                      </span>
                     </div>
                   </div>
                   <div className="flex -space-x-2">
-                    {participants.slice(0, 5).map(p => (
-                      <div key={p!.id} className="w-7 h-7 rounded-full bg-gradient-to-br from-gray-300 to-gray-400 border-2 border-white flex items-center justify-center text-white text-[9px] font-bold" title={p!.name}>
-                        {p!.name.charAt(0)}
+                    {participants.slice(0, 5).map((p: any) => (
+                      <div key={p.id} className="w-7 h-7 rounded-full bg-gradient-to-br from-gray-300 to-gray-400 border-2 border-white flex items-center justify-center text-white text-[9px] font-bold" title={p.first_name || p.name}>
+                        {(p.first_name || p.name || '?').charAt(0)}
                       </div>
                     ))}
                     {participants.length > 5 && (
@@ -94,7 +88,7 @@ export default function Meetings() {
                     )}
                   </div>
                 </div>
-                {m.agenda.length > 0 && (
+                {m.agenda && m.agenda.length > 0 && (
                   <div className="mt-4 pt-4 border-t border-gray-100">
                     <p className="text-xs font-semibold text-gray-700 mb-2">{t('meetings.agenda')}</p>
                     <ul className="space-y-1">

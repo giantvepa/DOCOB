@@ -1,11 +1,11 @@
 import { useContext, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AppContext, DocType } from '../App';
+import { AppContext } from '../App';
 import { Search, Inbox, Send, FileText } from 'lucide-react';
 
 export default function Registry() {
   const { documents, employees, t } = useContext(AppContext);
-  const [typeFilter, setTypeFilter] = useState<DocType | 'all'>('all');
+  const [typeFilter, setTypeFilter] = useState<string>('all');
   const [search, setSearch] = useState('');
 
   const filtered = documents.filter(d => {
@@ -34,9 +34,9 @@ export default function Registry() {
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: t('nav.incoming'), value: incoming, icon: Inbox, gradient: 'gradient-blue', filter: 'incoming' as DocType },
-          { label: t('nav.outgoing'), value: outgoing, icon: Send, gradient: 'gradient-green', filter: 'outgoing' as DocType },
-          { label: t('nav.internal'), value: internal, icon: FileText, gradient: 'gradient-purple', filter: 'internal' as DocType },
+          { label: t('nav.incoming'), value: incoming, icon: Inbox, gradient: 'gradient-blue', filter: 'incoming' },
+          { label: t('nav.outgoing'), value: outgoing, icon: Send, gradient: 'gradient-green', filter: 'outgoing' },
+          { label: t('nav.internal'), value: internal, icon: FileText, gradient: 'gradient-purple', filter: 'internal' },
         ].map(s => (
           <button
             key={s.label}
@@ -63,7 +63,7 @@ export default function Registry() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t('common.search')}
-            className="w-full h-10 pl-10 pr-4 modern-input rounded-xl text-sm"
+            className="w-full h-10 pl-10 pr-4 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
           />
         </div>
       </div>
@@ -71,41 +71,41 @@ export default function Registry() {
       {/* Table */}
       <div className="bg-white rounded-2xl shadow-modern overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full modern-table">
+          <table className="w-full">
             <thead>
-              <tr>
-                <th className="px-6 py-4 text-left">{t('docs.type')}</th>
-                <th className="px-6 py-4 text-left">{t('docs.number')}</th>
-                <th className="px-6 py-4 text-left">{t('docs.date')}</th>
-                <th className="px-6 py-4 text-left">{t('registry.name')}</th>
-                <th className="px-6 py-4 text-left">{t('docs.correspondent')}</th>
-                <th className="px-6 py-4 text-left">{t('docs.author')}</th>
+              <tr className="bg-gray-50 border-b border-gray-200">
+                <th className="text-left px-6 py-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">{t('docs.type')}</th>
+                <th className="text-left px-6 py-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">{t('docs.number')}</th>
+                <th className="text-left px-6 py-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">{t('docs.date')}</th>
+                <th className="text-left px-6 py-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">{t('registry.name')}</th>
+                <th className="text-left px-6 py-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">{t('docs.correspondent')}</th>
+                <th className="text-left px-6 py-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">{t('docs.author')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filtered.map(doc => {
                 const author = getEmp(doc.authorId || doc.author);
-                const authorName = author?.name || `${author?.first_name || ''} ${author?.last_name || ''}`.trim() || 'Неизвестно';
-                
                 return (
-                <tr key={doc.id} className="hover:bg-gray-50 transition">
-                  <td className="px-6 py-4 text-center text-xl">
-                    {(doc.type || doc.doc_type) === 'incoming' ? '📥' : (doc.type || doc.doc_type) === 'outgoing' ? '📤' : '📄'}
-                  </td>
-                  <td className="px-6 py-4">
-                    <Link to={`/documents/${doc.id}`} className="text-sm font-medium text-blue-600 hover:text-blue-700">
-                      {doc.number}
-                    </Link>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">{fmtDate(doc.createdAt || doc.created_at)}</td>
-                  <td className="px-6 py-4">
-                    <Link to={`/documents/${doc.id}`} className="text-sm text-gray-900 hover:text-blue-600 transition truncate block max-w-xs">
-                      {doc.title}
-                    </Link>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{doc.correspondent || '—'}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{authorName.split(' ').slice(0, 2).join(' ')}</td>
-                </tr>
+                  <tr key={doc.id} className="hover:bg-gray-50 transition">
+                    <td className="px-6 py-4 text-center text-xl">
+                      {doc.type === 'incoming' ? '📥' : doc.type === 'outgoing' ? '📤' : '📄'}
+                    </td>
+                    <td className="px-6 py-4">
+                      <Link to={`/documents/${doc.id}`} className="text-sm font-medium text-blue-600 hover:text-blue-700">
+                        {doc.number}
+                      </Link>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-500">{fmtDate(doc.createdAt)}</td>
+                    <td className="px-6 py-4">
+                      <Link to={`/documents/${doc.id}`} className="text-sm text-gray-900 hover:text-blue-600 transition truncate block max-w-xs">
+                        {doc.title}
+                      </Link>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{doc.correspondent || '—'}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600">
+                      {author ? `${author.first_name || author.name || ''} ${author.last_name || ''}`.trim().split(' ').slice(0, 2).join(' ') : '—'}
+                    </td>
+                  </tr>
                 );
               })}
             </tbody>

@@ -12,7 +12,9 @@ export default function Employees() {
     if (deptFilter !== 'all' && e.department !== deptFilter) return false;
     if (search) {
       const q = search.toLowerCase();
-      return e.name.toLowerCase().includes(q) || e.position.toLowerCase().includes(q) || e.email.toLowerCase().includes(q);
+      return (e.name || `${e.first_name || ''} ${e.last_name || ''}`.trim() || e.username || e.email || '').toLowerCase().includes(q) || 
+             (e.position || '').toLowerCase().includes(q) || 
+             (e.email || '').toLowerCase().includes(q);
     }
     return true;
   });
@@ -34,13 +36,13 @@ export default function Employees() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t('employees.search_placeholder')}
-              className="w-full h-10 pl-10 pr-4 modern-input rounded-xl text-sm"
+              className="w-full h-10 pl-10 pr-4 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
             />
           </div>
           <select
             value={deptFilter}
             onChange={(e) => setDeptFilter(e.target.value)}
-            className="h-10 px-4 modern-input modern-select rounded-xl text-sm"
+            className="h-10 px-4 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
           >
             <option value="all">{t('employees.all_departments')}</option>
             {departments.map(d => <option key={d} value={d}>{d}</option>)}
@@ -52,45 +54,43 @@ export default function Employees() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {filtered.map(emp => {
           const empName = emp.name || `${emp.first_name || ''} ${emp.last_name || ''}`.trim() || emp.username || emp.email || 'Пользователь';
-          const empInitial = empName.charAt(0).toUpperCase();
-          
           return (
-          <div key={emp.id} className="bg-white rounded-2xl shadow-modern hover-card overflow-hidden">
-            <div className="p-6">
-              <div className="flex items-start gap-4 mb-4">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-2xl font-bold flex-shrink-0">
-                  {empInitial}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-semibold text-gray-900 truncate">{empName}</h3>
-                  <p className="text-xs text-gray-500 mt-0.5">{emp.position}</p>
-                  <div className="flex items-center gap-1.5 mt-1">
-                    <Building2 size={12} className="text-gray-400" />
-                    <span className="text-xs text-gray-500">{emp.department}</span>
+            <div key={emp.id} className="bg-white rounded-2xl shadow-modern hover-card overflow-hidden">
+              <div className="p-6">
+                <div className="flex items-start gap-4 mb-4">
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-2xl font-bold flex-shrink-0">
+                    {emp.avatar || empName.charAt(0)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-sm font-semibold text-gray-900 truncate">{empName}</h3>
+                    <p className="text-xs text-gray-500 mt-0.5">{emp.position}</p>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <Building2 size={12} className="text-gray-400" />
+                      <span className="text-xs text-gray-500">{emp.department}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="space-y-2 pt-4 border-t border-gray-100">
-                <div className="flex items-center gap-2 text-xs text-gray-600">
-                  <Mail size={14} className="text-gray-400" />
-                  <span className="truncate">{emp.email}</span>
+                <div className="space-y-2 pt-4 border-t border-gray-100">
+                  <div className="flex items-center gap-2 text-xs text-gray-600">
+                    <Mail size={14} className="text-gray-400" />
+                    <span className="truncate">{emp.email}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-gray-600">
+                    <Phone size={14} className="text-gray-400" />
+                    <span>{emp.phone}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-gray-600">
-                  <Phone size={14} className="text-gray-400" />
-                  <span>{emp.phone}</span>
+                <div className="mt-4">
+                  <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
+                    emp.role === 'admin' ? 'bg-red-100 text-red-700' :
+                    emp.role === 'manager' ? 'bg-amber-100 text-amber-700' :
+                    'bg-gray-100 text-gray-700'
+                  }`}>
+                    {emp.role === 'admin' ? t('employees.admin') : emp.role === 'manager' ? t('employees.manager') : t('employees.employee')}
+                  </span>
                 </div>
-              </div>
-              <div className="mt-4">
-                <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
-                  emp.role === 'admin' ? 'bg-red-100 text-red-700' :
-                  emp.role === 'manager' ? 'bg-amber-100 text-amber-700' :
-                  'bg-gray-100 text-gray-700'
-                }`}>
-                  {emp.role === 'admin' ? t('employees.admin') : emp.role === 'manager' ? t('employees.manager') : t('employees.employee')}
-                </span>
               </div>
             </div>
-          </div>
           );
         })}
       </div>
