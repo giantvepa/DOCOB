@@ -1,30 +1,28 @@
 import { useContext, useState, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { AppContext, DocStatus, DocCategory, DocType } from '../App';
-import { Search, Plus, Filter, Eye, Download, MoreVertical, FileText, Calendar, User } from 'lucide-react';
-import CreateDocumentModal from '../components/CreateDocumentModal';
+import { AppContext } from '../App';
+import { Search, Plus, FileText, Eye, Download, MoreVertical } from 'lucide-react';
 
-const STATUS_CONFIG: Record<DocStatus, { label: string; color: string; bg: string; dot: string }> = {
-  draft: { label: 'Черновик', color: 'text-gray-600', bg: 'bg-gray-100', dot: 'bg-gray-400' },
-  on_approval: { label: 'На согласовании', color: 'text-amber-600', bg: 'bg-amber-100', dot: 'bg-amber-400' },
-  on_signing: { label: 'На подписании', color: 'text-blue-600', bg: 'bg-blue-100', dot: 'bg-blue-400' },
-  signed: { label: 'Подписан', color: 'text-green-600', bg: 'bg-green-100', dot: 'bg-green-400' },
-  executed: { label: 'Исполнен', color: 'text-emerald-600', bg: 'bg-emerald-100', dot: 'bg-emerald-400' },
-  rejected: { label: 'Отклонён', color: 'text-red-600', bg: 'bg-red-100', dot: 'bg-red-400' },
-  archived: { label: 'В архиве', color: 'text-slate-500', bg: 'bg-slate-100', dot: 'bg-slate-400' },
+const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; dot: string }> = {
+  draft: { label: 'Черновик', color: 'text-[#666]', bg: 'bg-[#e8e8e8]', dot: 'bg-[#999]' },
+  on_approval: { label: 'На согласовании', color: 'text-[#cc6600]', bg: 'bg-[#fff3e0]', dot: 'bg-[#cc6600]' },
+  on_signing: { label: 'На подписании', color: 'text-[#0066cc]', bg: 'bg-[#e3f2fd]', dot: 'bg-[#0066cc]' },
+  signed: { label: 'Подписан', color: 'text-[#2e7d32]', bg: 'bg-[#e8f5e9]', dot: 'bg-[#2e7d32]' },
+  executed: { label: 'Исполнен', color: 'text-[#1b5e20]', bg: 'bg-[#c8e6c9]', dot: 'bg-[#1b5e20]' },
+  rejected: { label: 'Отклонён', color: 'text-[#c62828]', bg: 'bg-[#ffebee]', dot: 'bg-[#c62828]' },
+  archived: { label: 'В архиве', color: 'text-[#666]', bg: 'bg-[#f5f5f5]', dot: 'bg-[#999]' },
 };
 
 export default function Documents() {
   const { documents, employees, t } = useContext(AppContext);
   const [searchParams] = useSearchParams();
-  const typeParam = searchParams.get('type') as DocType | null;
-  const statusParam = searchParams.get('status') as DocStatus | null;
+  const typeParam = searchParams.get('type');
+  const statusParam = searchParams.get('status');
 
   const [search, setSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState<DocType | 'all'>(typeParam || 'all');
-  const [statusFilter, setStatusFilter] = useState<DocStatus | 'all'>(statusParam || 'all');
-  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
-  const [showCreateDoc, setShowCreateDoc] = useState(false);
+  const [typeFilter, setTypeFilter] = useState(typeParam || 'all');
+  const [statusFilter, setStatusFilter] = useState(statusParam || 'all');
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     let result = [...documents];
@@ -41,203 +39,191 @@ export default function Documents() {
     return result.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
   }, [documents, search, typeFilter, statusFilter]);
 
-  const fmtDate = (d: string) => new Date(d).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' });
+  const fmtDate = (d: string) => new Date(d).toLocaleDateString('ru-RU');
   const getEmp = (id: string) => employees.find(e => e.id === id);
 
+  const selectedDoc = documents.find(d => d.id === selectedId);
+
+  const sectionTitle = typeParam === 'incoming' ? 'Входящие документы' : 
+                       typeParam === 'outgoing' ? 'Исходящие документы' : 
+                       typeParam === 'internal' ? 'Внутренние документы' : 
+                       statusParam === 'draft' ? 'Черновики' : 
+                       statusParam === 'on_approval' ? 'Документы на согласовании' : 
+                       statusParam === 'archived' ? 'Архив документов' : 
+                       'Все документы';
+
   return (
-    <div className="p-6 space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('docs.title')}</h1>
-          <p className="text-sm text-gray-500 mt-1">{filtered.length} {t('common.records')}</p>
+    <div className="flex flex-col h-full">
+      {/* Section Header */}
+      <div className="px-3 py-1.5 bg-white border-b border-[#999] flex items-center gap-2 flex-shrink-0">
+        <span className="text-[11px] font-bold text-[#333]">{sectionTitle}</span>
+        <span className="text-[9px] text-[#666]">({filtered.length})</span>
+        <div className="ml-auto flex items-center gap-1">
+          <button className="flex items-center gap-1 px-2 py-0.5 text-[10px] bg-[#0066cc] hover:bg-[#0055aa] text-white rounded border border-[#004499]">
+            <Plus size={10} /> Создать
+          </button>
         </div>
-        <button 
-          onClick={() => setShowCreateDoc(true)}
-          className="btn-primary px-6 py-3 rounded-xl text-white text-sm font-medium flex items-center gap-2"
+      </div>
+
+      {/* Filters Bar */}
+      <div className="px-3 py-1 bg-[#f0f0f0] border-b border-[#999] flex items-center gap-1.5 flex-shrink-0 flex-wrap">
+        <div className="relative flex-1 min-w-[150px] max-w-[200px]">
+          <Search size={10} className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[#888]" />
+          <input 
+            type="text" 
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Поиск..." 
+            className="w-full h-[20px] pl-5 pr-1.5 bg-white border border-[#999] rounded-sm text-[10px] focus:outline-none focus:border-[#0066cc]" 
+          />
+        </div>
+        <select 
+          value={typeFilter} 
+          onChange={(e) => setTypeFilter(e.target.value)}
+          className="h-[20px] px-1 bg-white border border-[#999] rounded-sm text-[10px]"
         >
-          <Plus size={18} />
-          {t('toolbar.create')}
-        </button>
+          <option value="all">Все типы</option>
+          <option value="incoming">Входящие</option>
+          <option value="outgoing">Исходящие</option>
+          <option value="internal">Внутренние</option>
+        </select>
+        <select 
+          value={statusFilter} 
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="h-[20px] px-1 bg-white border border-[#999] rounded-sm text-[10px]"
+        >
+          <option value="all">Все статусы</option>
+          <option value="draft">Черновик</option>
+          <option value="on_approval">На согласовании</option>
+          <option value="signed">Подписан</option>
+          <option value="executed">Исполнен</option>
+          <option value="rejected">Отклонён</option>
+        </select>
       </div>
 
-      {/* Create Document Modal */}
-      {showCreateDoc && <CreateDocumentModal onClose={() => setShowCreateDoc(false)} />}
-
-      {/* Filters */}
-      <div className="bg-white rounded-2xl shadow-modern p-4">
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Search */}
-          <div className="flex-1 min-w-[200px] relative">
-            <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder={t('common.search')}
-              className="w-full h-10 pl-10 pr-4 modern-input rounded-xl text-sm"
-            />
-          </div>
-
-          {/* Type Filter */}
-          <select
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value as DocType | 'all')}
-            className="h-10 px-4 modern-input modern-select rounded-xl text-sm"
-          >
-            <option value="all">{t('common.all')} {t('docs.type')}</option>
-            <option value="incoming">{t('nav.incoming')}</option>
-            <option value="outgoing">{t('nav.outgoing')}</option>
-            <option value="internal">{t('nav.internal')}</option>
-          </select>
-
-          {/* Status Filter */}
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as DocStatus | 'all')}
-            className="h-10 px-4 modern-input modern-select rounded-xl text-sm"
-          >
-            <option value="all">{t('common.all')} {t('docs.status')}</option>
-            <option value="draft">{t('status.draft')}</option>
-            <option value="on_approval">{t('status.on_approval')}</option>
-            <option value="signed">{t('status.signed')}</option>
-            <option value="executed">{t('status.executed')}</option>
-            <option value="rejected">{t('status.rejected')}</option>
-          </select>
-
-          {/* View Toggle */}
-          <div className="flex items-center bg-gray-100 rounded-xl p-1">
-            <button
-              onClick={() => setViewMode('table')}
-              className={`px-4 py-2 rounded-lg text-xs font-medium transition ${
-                viewMode === 'table' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500'
-              }`}
-            >
-              {t('common.view')}
-            </button>
-            <button
-              onClick={() => setViewMode('cards')}
-              className={`px-4 py-2 rounded-lg text-xs font-medium transition ${
-                viewMode === 'cards' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500'
-              }`}
-            >
-              Карточки
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Content */}
-      {viewMode === 'table' ? (
-        <div className="bg-white rounded-2xl shadow-modern overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full modern-table">
-              <thead>
-                <tr>
-                  <th className="px-6 py-4 text-left">{t('docs.number')}</th>
-                  <th className="px-6 py-4 text-left">{t('docs.subject')}</th>
-                  <th className="px-6 py-4 text-left">{t('docs.type')}</th>
-                  <th className="px-6 py-4 text-left">{t('docs.status')}</th>
-                  <th className="px-6 py-4 text-left">{t('docs.author')}</th>
-                  <th className="px-6 py-4 text-left">{t('docs.date')}</th>
-                  <th className="px-6 py-4"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {filtered.map(doc => {
-                  const statusConf = STATUS_CONFIG[doc.status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.draft;
-                  const author = getEmp(doc.authorId || doc.author);
-                  return (
-                    <tr key={doc.id} className="hover:bg-gray-50 transition">
-                      <td className="px-6 py-4">
-                        <Link to={`/documents/${doc.id}`} className="text-sm font-medium text-blue-600 hover:text-blue-700">
-                          {doc.number}
-                        </Link>
-                      </td>
-                      <td className="px-6 py-4">
-                        <Link to={`/documents/${doc.id}`} className="text-sm text-gray-900 hover:text-blue-600 transition">
-                          <p className="font-medium truncate max-w-xs">{doc.title}</p>
-                          {doc.correspondent && <p className="text-xs text-gray-500 mt-0.5">{doc.correspondent}</p>}
-                        </Link>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-xs text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
-                          {(doc.type || doc.doc_type) === 'incoming' ? t('nav.incoming') : (doc.type || doc.doc_type) === 'outgoing' ? t('nav.outgoing') : t('nav.internal')}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${statusConf.bg} ${statusConf.color}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${statusConf.dot}`}></span>
-                          {statusConf.label}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-xs font-bold">
-                            {author?.name.charAt(0)}
-                          </div>
-                          <span className="text-xs text-gray-600">{author?.name.split(' ').slice(0, 2).join(' ')}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-xs text-gray-500">{fmtDate(doc.updatedAt)}</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <button className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center transition">
-                          <MoreVertical size={16} className="text-gray-400" />
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+      <div className="flex flex-1 overflow-hidden">
+        {/* Table */}
+        <div className="flex-1 overflow-auto bg-white">
+          <table className="w-full text-[10px] border-collapse">
+            <thead className="sticky top-0 z-10">
+              <tr className="bg-gradient-to-b from-[#e8eef5] to-[#d0dce8] border-b border-[#999]">
+                <th className="text-left px-1.5 py-1 font-bold text-[#333] border-r border-[#bbb] w-6">№</th>
+                <th className="text-left px-1.5 py-1 font-bold text-[#333] border-r border-[#bbb] w-20">Рег. номер</th>
+                <th className="text-left px-1.5 py-1 font-bold text-[#333] border-r border-[#bbb] w-16">Дата</th>
+                <th className="text-left px-1.5 py-1 font-bold text-[#333] border-r border-[#bbb] w-14">Тип</th>
+                <th className="text-left px-1.5 py-1 font-bold text-[#333] border-r border-[#bbb]">Корреспондент</th>
+                <th className="text-left px-1.5 py-1 font-bold text-[#333] border-r border-[#bbb]">Тема документа</th>
+                <th className="text-left px-1.5 py-1 font-bold text-[#333] border-r border-[#bbb] w-20">Статус</th>
+                <th className="text-left px-1.5 py-1 font-bold text-[#333] w-20">Автор</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((doc, idx) => {
+                const statusConf = STATUS_CONFIG[doc.status] || STATUS_CONFIG.draft;
+                const author = getEmp(doc.authorId || doc.author);
+                const isSelected = selectedId === doc.id;
+                return (
+                  <tr 
+                    key={doc.id} 
+                    onClick={() => setSelectedId(doc.id)}
+                    className={`border-b border-[#eee] cursor-pointer transition-colors ${
+                      isSelected ? 'bg-[#cce4ff]' : idx % 2 === 0 ? 'bg-white' : 'bg-[#f9f9f9]'
+                    } hover:bg-[#e3f0ff]`}
+                  >
+                    <td className="px-1.5 py-0.5 text-[#888] border-r border-[#eee]">{idx + 1}</td>
+                    <td className="px-1.5 py-0.5 border-r border-[#eee]">
+                      <Link to={`/documents/${doc.id}`} className="text-[#0066cc] hover:underline font-medium" onClick={(e) => e.stopPropagation()}>
+                        {doc.number}
+                      </Link>
+                    </td>
+                    <td className="px-1.5 py-0.5 text-[#555] border-r border-[#eee]">{fmtDate(doc.createdAt)}</td>
+                    <td className="px-1.5 py-0.5 text-[#555] border-r border-[#eee]">
+                      {doc.type === 'incoming' ? 'Входящий' : doc.type === 'outgoing' ? 'Исходящий' : 'Внутренний'}
+                    </td>
+                    <td className="px-1.5 py-0.5 text-[#555] border-r border-[#eee] truncate max-w-[120px]">{doc.correspondent || '—'}</td>
+                    <td className="px-1.5 py-0.5 text-[#333] border-r border-[#eee] truncate max-w-[200px]">{doc.title}</td>
+                    <td className="px-1.5 py-0.5 border-r border-[#eee]">
+                      <span className={`inline-flex items-center gap-1 px-1 py-0.5 rounded-sm text-[8px] font-medium ${statusConf.bg} ${statusConf.color}`}>
+                        <span className={`w-1 h-1 rounded-full ${statusConf.dot}`}></span>
+                        {statusConf.label}
+                      </span>
+                    </td>
+                    <td className="px-1.5 py-0.5 text-[#555]">
+                      {author ? `${author.first_name || author.name || ''} ${author.last_name || ''}`.trim() : '—'}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
           {filtered.length === 0 && (
-            <div className="py-16 text-center">
-              <FileText size={48} className="mx-auto text-gray-300 mb-3" />
-              <p className="text-sm text-gray-500">{t('docs.not_found')}</p>
+            <div className="text-center py-10 text-[10px] text-[#888]">
+              <FileText size={24} className="mx-auto mb-2 text-[#ccc]" />
+              Документы не найдены
             </div>
           )}
         </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map(doc => {
-            const statusConf = STATUS_CONFIG[doc.status];
-            const author = getEmp(doc.authorId);
-            return (
-              <Link key={doc.id} to={`/documents/${doc.id}`} className="bg-white rounded-2xl shadow-modern hover-card overflow-hidden">
-                <div className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${statusConf.bg} ${statusConf.color}`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${statusConf.dot}`}></span>
-                      {statusConf.label}
-                    </span>
-                    <span className="text-xs text-gray-400">{doc.number}</span>
-                  </div>
-                  <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 mb-2">{doc.title}</h3>
-                  <p className="text-xs text-gray-500 line-clamp-2">{doc.description}</p>
-                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-[10px] font-bold">
-                        {author?.name.charAt(0)}
+
+        {/* Right Panel - Quick Preview */}
+        {selectedDoc && (
+          <div className="w-[280px] border-l border-[#999] bg-white flex-shrink-0 overflow-y-auto hidden xl:flex flex-col">
+            <div className="px-2 py-1 bg-gradient-to-r from-[#d0dce8] to-[#e8eef5] border-b border-[#999]">
+              <p className="text-[9px] font-bold text-[#333] uppercase">Предварительный просмотр</p>
+            </div>
+            <div className="p-2 space-y-2 text-[10px] flex-1">
+              <div>
+                <label className="text-[8px] text-[#666] uppercase font-bold">Рег. номер</label>
+                <p className="text-[10px] font-medium text-[#0066cc]">{selectedDoc.number}</p>
+              </div>
+              <div>
+                <label className="text-[8px] text-[#666] uppercase font-bold">Тема</label>
+                <p className="text-[10px] text-[#333] font-medium">{selectedDoc.title}</p>
+              </div>
+              <div>
+                <label className="text-[8px] text-[#666] uppercase font-bold">Статус</label>
+                <span className={`inline-block px-1 py-0.5 rounded-sm text-[8px] font-medium ${STATUS_CONFIG[selectedDoc.status]?.bg} ${STATUS_CONFIG[selectedDoc.status]?.color}`}>
+                  {STATUS_CONFIG[selectedDoc.status]?.label}
+                </span>
+              </div>
+              <div>
+                <label className="text-[8px] text-[#666] uppercase font-bold">Описание</label>
+                <p className="text-[9px] text-[#555] leading-relaxed">{selectedDoc.description}</p>
+              </div>
+              <div>
+                <label className="text-[8px] text-[#666] uppercase font-bold">Маршрут согласования</label>
+                <div className="space-y-0.5 mt-0.5">
+                  {selectedDoc.approvals?.map((a, i) => {
+                    const approver = employees.find(e => e.id === (a.userId || a.user));
+                    return (
+                      <div key={a.id} className="flex items-center gap-1">
+                        <span className={`w-3 h-3 rounded-full flex items-center justify-center text-[7px] ${
+                          a.status === 'approved' ? 'bg-[#c8e6c9] text-[#1b5e20]' :
+                          a.status === 'rejected' ? 'bg-[#ffcdd2] text-[#c62828]' :
+                          'bg-[#fff3e0] text-[#cc6600]'
+                        }`}>
+                          {a.status === 'approved' ? '✓' : a.status === 'rejected' ? '✗' : (i + 1)}
+                        </span>
+                        <span className="text-[9px] text-[#333] truncate">
+                          {approver ? `${approver.first_name || approver.name || ''} ${approver.last_name || ''}`.trim() : 'Неизвестно'}
+                        </span>
                       </div>
-                      <span className="text-xs text-gray-500">{author?.name.split(' ').slice(0, 2).join(' ')}</span>
-                    </div>
-                    <span className="text-xs text-gray-400">{fmtDate(doc.updatedAt)}</span>
-                  </div>
+                    );
+                  })}
                 </div>
+              </div>
+              <Link to={`/documents/${selectedDoc.id}`} className="block w-full text-center py-1 bg-[#0066cc] hover:bg-[#0055aa] text-white rounded-sm text-[10px] font-medium transition mt-2">
+                Открыть карточку →
               </Link>
-            );
-          })}
-          {filtered.length === 0 && (
-            <div className="col-span-full py-16 text-center">
-              <FileText size={48} className="mx-auto text-gray-300 mb-3" />
-              <p className="text-sm text-gray-500">{t('docs.not_found')}</p>
             </div>
-          )}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
+
+      {/* Bottom Info Bar */}
+      <div className="px-2 py-0.5 bg-[#f0f0f0] border-t border-[#999] text-[9px] text-[#555] flex-shrink-0 flex items-center justify-between">
+        <span>Записей: {filtered.length} | Выделено: {selectedId ? 1 : 0}</span>
+        <span>Фильтр: {typeFilter !== 'all' ? (typeFilter === 'incoming' ? 'Входящие' : typeFilter === 'outgoing' ? 'Исходящие' : 'Внутренние') : 'все типы'} | {statusFilter !== 'all' ? STATUS_CONFIG[statusFilter]?.label : 'все статусы'}</span>
+      </div>
     </div>
   );
 }

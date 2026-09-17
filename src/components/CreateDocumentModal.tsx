@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { AppContext, Document, DocType, DocCategory, TaskPriority } from '../App';
-import { useContext } from 'react';
-import { X, Upload, FileText, Calendar, Users, Tag } from 'lucide-react';
+import { useState, useContext } from 'react';
+import { AppContext } from '../App';
+import type { Document, DocType, DocCategory, TaskPriority } from '../types';
+import { X, Upload, FileText } from 'lucide-react';
 
 interface Props {
   onClose: () => void;
