@@ -1,18 +1,15 @@
-import { useContext, useState } from 'react';
+import { useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { AppContext } from '../App';
-import { 
-  FileText, Clock, CheckCircle2, AlertTriangle, Calendar, 
-  Users, TrendingUp, ArrowRight, Plus, Inbox, Send
-} from 'lucide-react';
-import CreateDocumentModal from '../components/CreateDocumentModal';
+import { useAuth } from '../contexts/AuthContext';
+import { FileText, Clock, CheckCircle2, AlertTriangle, Calendar, Users, ArrowRight, Plus } from 'lucide-react';
 
 export default function HomePage() {
-  const { documents, tasks, meetings, currentUser, t } = useContext(AppContext);
-  const [showCreateDoc, setShowCreateDoc] = useState(false);
+  const { documents, tasks, meetings, t } = useContext(AppContext);
+  const { user } = useAuth();
 
-  const myPendingDocs = documents.filter(d => d.approvals.some(a => a.userId === currentUser.id && a.status === 'waiting'));
-  const myTasks = tasks.filter(t => t.assigneeId === currentUser.id && t.status !== 'completed');
+  const myPendingDocs = documents.filter(d => d.approvals.some(a => a.userId === user?.id && a.status === 'waiting'));
+  const myTasks = tasks.filter(task => task.assigneeId === user?.id && task.status !== 'completed');
   const upcomingMeetings = meetings.filter(m => m.status === 'planned').sort((a, b) => a.date.localeCompare(b.date)).slice(0, 3);
   const recentDocs = [...documents].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()).slice(0, 5);
 
@@ -20,224 +17,231 @@ export default function HomePage() {
   const fmtDateTime = (d: string) => new Date(d).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
   return (
-    <div className="p-6 space-y-6 animate-fade-in">
-      {/* Welcome Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('home.title')}</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            {new Date().toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button 
-            onClick={() => setShowCreateDoc(true)}
-            className="btn-primary px-6 py-3 rounded-xl text-white text-sm font-medium flex items-center gap-2"
-          >
-            <Plus size={18} />
-            {t('toolbar.create')}
-          </button>
-        </div>
+    <div className="p-3 space-y-3 overflow-y-auto h-full">
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-1 text-[10px] text-[#666] bg-[#f0f0f0] border border-[#999] px-2 py-1">
+        <span>🏠</span> <span>{t('home.title')}</span>
+        <span className="ml-auto">{new Date().toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span>
       </div>
 
-      {/* Create Document Modal */}
-      {showCreateDoc && <CreateDocumentModal onClose={() => setShowCreateDoc(false)} />}
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          { label: t('app.documents'), value: documents.length, icon: FileText, gradient: 'gradient-blue', change: '+12%' },
-          { label: t('app.tasks'), value: myTasks.length, icon: CheckCircle2, gradient: 'gradient-green', change: '+5%' },
-          { label: t('nav.meetings'), value: meetings.filter(m => m.status === 'planned').length, icon: Calendar, gradient: 'gradient-orange', change: '+2' },
-          { label: t('nav.employees'), value: 8, icon: Users, gradient: 'gradient-purple', change: '100%' },
-        ].map((stat, idx) => (
-          <div key={idx} className="bg-white rounded-2xl p-6 shadow-modern hover-card">
-            <div className="flex items-center justify-between mb-4">
-              <div className={`w-12 h-12 rounded-xl ${stat.gradient} flex items-center justify-center`}>
-                <stat.icon size={24} className="text-white" />
-              </div>
-              <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full">
-                {stat.change}
-              </span>
+      {/* Widgets Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        {/* Widget: Pending Documents */}
+        <div className="bg-white border border-[#999]">
+          <div className="flex items-center justify-between px-3 py-1.5 bg-gradient-to-r from-[#d0dce8] to-[#e8eef5] border-b border-[#999]">
+            <div className="flex items-center gap-1.5">
+              <AlertTriangle size={12} className="text-[#cc6600]" />
+              <span className="text-[11px] font-bold text-[#333]">{t('home.pending_docs')}</span>
+              {myPendingDocs.length > 0 && (
+                <span className="text-[9px] bg-[#cc6600] text-white px-1 rounded">{myPendingDocs.length}</span>
+              )}
             </div>
-            <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
-            <p className="text-sm text-gray-500 mt-1">{stat.label}</p>
+            <Link to="/documents?status=on_approval" className="text-[9px] text-[#0066cc] hover:underline">Все →</Link>
           </div>
-        ))}
-      </div>
-
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Pending Documents */}
-        <div className="lg:col-span-2 bg-white rounded-2xl shadow-modern overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
-                <AlertTriangle size={20} className="text-amber-600" />
-              </div>
-              <div>
-                <h2 className="text-sm font-semibold text-gray-900">{t('home.pending_docs')}</h2>
-                <p className="text-xs text-gray-500">{myPendingDocs.length} {t('app.documents')}</p>
-              </div>
-            </div>
-            <Link to="/documents" className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1">
-              {t('common.view')} <ArrowRight size={14} />
-            </Link>
-          </div>
-          <div className="divide-y divide-gray-50">
+          <div className="max-h-[200px] overflow-y-auto">
             {myPendingDocs.length === 0 ? (
-              <div className="py-12 text-center">
-                <CheckCircle2 size={48} className="mx-auto text-green-300 mb-3" />
-                <p className="text-sm text-gray-500">{t('home.no_pending')}</p>
+              <div className="text-center py-6 text-[10px] text-[#888]">
+                <CheckCircle2 size={20} className="mx-auto mb-1 text-[#4caf50]" />
+                {t('home.no_pending')}
               </div>
             ) : (
-              myPendingDocs.slice(0, 5).map(doc => (
-                <Link key={doc.id} to={`/documents/${doc.id}`} className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition">
-                  <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
-                    <FileText size={18} className="text-blue-600" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">{doc.title}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{doc.number} • {doc.category}</p>
-                  </div>
-                  <div className="flex items-center gap-3 flex-shrink-0">
-                    <span className="px-3 py-1 bg-amber-50 text-amber-700 rounded-full text-xs font-medium">
-                      {t('status.on_approval')}
-                    </span>
-                    {(doc.dueDate || doc.due_date) && (
-                      <span className="text-xs text-red-500 flex items-center gap-1">
-                        <Calendar size={12} />
-                        {fmtDate(doc.dueDate || doc.due_date)}
-                      </span>
-                    )}
-                  </div>
-                </Link>
-              ))
+              <table className="w-full text-[10px] border-collapse">
+                <thead className="sticky top-0">
+                  <tr className="bg-[#f5f5f5] border-b border-[#ddd]">
+                    <th className="text-left px-2 py-1 text-[8px] font-bold text-[#555] border-r border-[#ddd]">Номер</th>
+                    <th className="text-left px-2 py-1 text-[8px] font-bold text-[#555] border-r border-[#ddd]">Название</th>
+                    <th className="text-left px-2 py-1 text-[8px] font-bold text-[#555] border-r border-[#ddd] w-14">Дата</th>
+                    <th className="text-left px-2 py-1 text-[8px] font-bold text-[#555] w-20">Статус</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {myPendingDocs.map((doc, i) => (
+                    <tr key={doc.id} className={`${i % 2 === 0 ? 'bg-white' : 'bg-[#f9f9f9]'} hover:bg-[#cce4ff] cursor-pointer border-b border-[#eee]`}>
+                      <td className="px-2 py-1 border-r border-[#eee]">
+                        <Link to={`/documents/${doc.id}`} className="text-[#0066cc] hover:underline font-medium">{doc.number}</Link>
+                      </td>
+                      <td className="px-2 py-1 text-[#333] border-r border-[#eee] truncate max-w-[180px]">{doc.title}</td>
+                      <td className="px-2 py-1 text-[#666] border-r border-[#eee]">{fmtDate(doc.createdAt)}</td>
+                      <td className="px-2 py-1">
+                        <span className="px-1 py-0.5 bg-[#fff3e0] text-[#cc6600] rounded text-[8px] font-medium">
+                          {t('status.on_approval')}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             )}
+          </div>
+          <div className="px-3 py-1 bg-[#f5f5f5] border-t border-[#ddd] text-[9px] text-[#666]">
+            Всего: {myPendingDocs.length}
           </div>
         </div>
 
-        {/* Recent Documents */}
-        <div className="bg-white rounded-2xl shadow-modern overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
-                <Clock size={20} className="text-blue-600" />
-              </div>
-              <h2 className="text-sm font-semibold text-gray-900">{t('home.recent_docs')}</h2>
+        {/* Widget: My Tasks */}
+        <div className="bg-white border border-[#999]">
+          <div className="flex items-center justify-between px-3 py-1.5 bg-gradient-to-r from-[#d0dce8] to-[#e8eef5] border-b border-[#999]">
+            <div className="flex items-center gap-1.5">
+              <CheckCircle2 size={12} className="text-[#0066cc]" />
+              <span className="text-[11px] font-bold text-[#333]">{t('home.my_tasks')}</span>
+              {myTasks.length > 0 && (
+                <span className="text-[9px] bg-[#0066cc] text-white px-1 rounded">{myTasks.length}</span>
+              )}
             </div>
-            <Link to="/documents" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
-              {t('common.view')}
-            </Link>
+            <Link to="/tasks" className="text-[9px] text-[#0066cc] hover:underline">Все →</Link>
           </div>
-          <div className="divide-y divide-gray-50">
-            {recentDocs.map(doc => (
-              <Link key={doc.id} to={`/documents/${doc.id}`} className="flex items-center gap-3 px-6 py-3 hover:bg-gray-50 transition">
-                <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-                  <FileText size={14} className="text-gray-600" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-gray-900 truncate">{doc.title}</p>
-                  <p className="text-[10px] text-gray-500 mt-0.5">{fmtDateTime(doc.updatedAt)}</p>
-                </div>
-              </Link>
-            ))}
+          <div className="max-h-[200px] overflow-y-auto">
+            {myTasks.length === 0 ? (
+              <div className="text-center py-6 text-[10px] text-[#888]">{t('home.no_tasks')}</div>
+            ) : (
+              <table className="w-full text-[10px] border-collapse">
+                <thead className="sticky top-0">
+                  <tr className="bg-[#f5f5f5] border-b border-[#ddd]">
+                    <th className="text-left px-2 py-1 text-[8px] font-bold text-[#555] border-r border-[#ddd]">Задача</th>
+                    <th className="text-left px-2 py-1 text-[8px] font-bold text-[#555] border-r border-[#ddd] w-14">Срок</th>
+                    <th className="text-left px-2 py-1 text-[8px] font-bold text-[#555] border-r border-[#ddd] w-14">Приоритет</th>
+                    <th className="text-left px-2 py-1 text-[8px] font-bold text-[#555] w-16">Статус</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {myTasks.map((task, i) => (
+                    <tr key={task.id} className={`${i % 2 === 0 ? 'bg-white' : 'bg-[#f9f9f9]'} hover:bg-[#cce4ff] cursor-pointer border-b border-[#eee]`}>
+                      <td className="px-2 py-1 text-[#333] border-r border-[#eee] truncate max-w-[150px]">{task.title}</td>
+                      <td className="px-2 py-1 text-[#666] border-r border-[#eee]">{fmtDate(task.dueDate)}</td>
+                      <td className="px-2 py-1 border-r border-[#eee]">
+                        <span className={`px-1 py-0.5 rounded text-[8px] font-medium ${
+                          task.priority === 'critical' ? 'bg-[#ffebee] text-[#c62828]' :
+                          task.priority === 'high' ? 'bg-[#fff3e0] text-[#cc6600]' :
+                          task.priority === 'normal' ? 'bg-[#e3f2fd] text-[#0066cc]' :
+                          'bg-[#f5f5f5] text-[#666]'
+                        }`}>
+                          {task.priority === 'critical' ? 'Критичный' : task.priority === 'high' ? 'Высокий' : task.priority === 'normal' ? 'Обычный' : 'Низкий'}
+                        </span>
+                      </td>
+                      <td className="px-2 py-1">
+                        <span className={`px-1 py-0.5 rounded text-[8px] font-medium ${
+                          task.status === 'new' ? 'bg-[#e3f2fd] text-[#0066cc]' :
+                          task.status === 'in_progress' ? 'bg-[#fff3e0] text-[#cc6600]' :
+                          task.status === 'overdue' ? 'bg-[#ffebee] text-[#c62828]' :
+                          'bg-[#f5f5f5] text-[#666]'
+                        }`}>
+                          {task.status === 'new' ? 'Новая' : task.status === 'in_progress' ? 'В работе' : task.status === 'overdue' ? 'Просрочена' : 'Выполнена'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+          <div className="px-3 py-1 bg-[#f5f5f5] border-t border-[#ddd] text-[9px] text-[#666]">
+            Всего: {myTasks.length}
+          </div>
+        </div>
+
+        {/* Widget: Recent Documents */}
+        <div className="bg-white border border-[#999]">
+          <div className="flex items-center justify-between px-3 py-1.5 bg-gradient-to-r from-[#d0dce8] to-[#e8eef5] border-b border-[#999]">
+            <div className="flex items-center gap-1.5">
+              <Clock size={12} className="text-[#333]" />
+              <span className="text-[11px] font-bold text-[#333]">{t('home.recent_docs')}</span>
+            </div>
+            <Link to="/documents" className="text-[9px] text-[#0066cc] hover:underline">Все →</Link>
+          </div>
+          <div className="max-h-[200px] overflow-y-auto">
+            <table className="w-full text-[10px] border-collapse">
+              <thead className="sticky top-0">
+                <tr className="bg-[#f5f5f5] border-b border-[#ddd]">
+                  <th className="text-left px-2 py-1 text-[8px] font-bold text-[#555] border-r border-[#ddd]">Номер</th>
+                  <th className="text-left px-2 py-1 text-[8px] font-bold text-[#555] border-r border-[#ddd]">Название</th>
+                  <th className="text-left px-2 py-1 text-[8px] font-bold text-[#555] border-r border-[#ddd] w-20">Обновлён</th>
+                  <th className="text-left px-2 py-1 text-[8px] font-bold text-[#555] w-20">Статус</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentDocs.map((doc, i) => (
+                  <tr key={doc.id} className={`${i % 2 === 0 ? 'bg-white' : 'bg-[#f9f9f9]'} hover:bg-[#cce4ff] cursor-pointer border-b border-[#eee]`}>
+                    <td className="px-2 py-1 border-r border-[#eee]">
+                      <Link to={`/documents/${doc.id}`} className="text-[#0066cc] hover:underline font-medium">{doc.number}</Link>
+                    </td>
+                    <td className="px-2 py-1 text-[#333] border-r border-[#eee] truncate max-w-[180px]">{doc.title}</td>
+                    <td className="px-2 py-1 text-[#666] border-r border-[#eee]">{fmtDateTime(doc.updatedAt)}</td>
+                    <td className="px-2 py-1">
+                      <span className={`px-1 py-0.5 rounded text-[8px] font-medium ${
+                        doc.status === 'draft' ? 'bg-[#e8e8e8] text-[#666]' :
+                        doc.status === 'on_approval' ? 'bg-[#fff3e0] text-[#cc6600]' :
+                        doc.status === 'signed' ? 'bg-[#e8f5e9] text-[#2e7d32]' :
+                        doc.status === 'executed' ? 'bg-[#c8e6c9] text-[#1b5e20]' :
+                        'bg-[#f5f5f5] text-[#666]'
+                      }`}>
+                        {doc.status === 'draft' ? 'Черновик' : doc.status === 'on_approval' ? 'На согласовании' : doc.status === 'signed' ? 'Подписан' : doc.status === 'executed' ? 'Исполнен' : doc.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="px-3 py-1 bg-[#f5f5f5] border-t border-[#ddd] text-[9px] text-[#666]">
+            Всего: {documents.length}
+          </div>
+        </div>
+
+        {/* Widget: Meetings */}
+        <div className="bg-white border border-[#999]">
+          <div className="flex items-center justify-between px-3 py-1.5 bg-gradient-to-r from-[#d0dce8] to-[#e8eef5] border-b border-[#999]">
+            <div className="flex items-center gap-1.5">
+              <Calendar size={12} className="text-[#6a1b9a]" />
+              <span className="text-[11px] font-bold text-[#333]">{t('home.meetings')}</span>
+              {upcomingMeetings.length > 0 && (
+                <span className="text-[9px] bg-[#6a1b9a] text-white px-1 rounded">{upcomingMeetings.length}</span>
+              )}
+            </div>
+            <Link to="/meetings" className="text-[9px] text-[#0066cc] hover:underline">Все →</Link>
+          </div>
+          <div className="max-h-[200px] overflow-y-auto">
+            {upcomingMeetings.length === 0 ? (
+              <div className="text-center py-6 text-[10px] text-[#888]">{t('home.no_meetings')}</div>
+            ) : (
+              <div className="divide-y divide-[#eee]">
+                {upcomingMeetings.map(m => (
+                  <div key={m.id} className="px-3 py-2 hover:bg-[#cce4ff] cursor-pointer">
+                    <p className="text-[10px] font-medium text-[#333]">{m.title}</p>
+                    <div className="flex items-center gap-2 mt-0.5 text-[9px] text-[#666]">
+                      <span>{fmtDate(m.date)} в {m.time}</span>
+                      <span>• {m.location}</span>
+                      <span>• <Users size={8} className="inline" /> {m.participants.length} чел.</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="px-3 py-1 bg-[#f5f5f5] border-t border-[#ddd] text-[9px] text-[#666]">
+            Запланировано: {meetings.filter(m => m.status === 'planned').length}
           </div>
         </div>
       </div>
 
-      {/* Tasks and Meetings */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* My Tasks */}
-        <div className="bg-white rounded-2xl shadow-modern overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
-                <CheckCircle2 size={20} className="text-green-600" />
-              </div>
-              <div>
-                <h2 className="text-sm font-semibold text-gray-900">{t('home.my_tasks')}</h2>
-                <p className="text-xs text-gray-500">{myTasks.length} {t('app.tasks')}</p>
-              </div>
-            </div>
-            <Link to="/tasks" className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1">
-              {t('common.view')} <ArrowRight size={14} />
-            </Link>
-          </div>
-          <div className="divide-y divide-gray-50">
-            {myTasks.length === 0 ? (
-              <div className="py-12 text-center">
-                <CheckCircle2 size={48} className="mx-auto text-green-300 mb-3" />
-                <p className="text-sm text-gray-500">{t('home.no_tasks')}</p>
-              </div>
-            ) : (
-              myTasks.slice(0, 4).map(task => (
-                <div key={task.id} className="px-6 py-3 hover:bg-gray-50 transition">
-                  <p className="text-sm font-medium text-gray-900">{task.title}</p>
-                  <div className="flex items-center gap-2 mt-2">
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
-                      task.priority === 'critical' ? 'bg-red-100 text-red-700' :
-                      task.priority === 'high' ? 'bg-orange-100 text-orange-700' :
-                      'bg-blue-100 text-blue-700'
-                    }`}>
-                      {task.priority === 'critical' ? t('priority.critical') : 
-                       task.priority === 'high' ? t('priority.high') : 
-                       t('priority.normal')}
-                    </span>
-                    <span className="text-xs text-gray-500 flex items-center gap-1">
-                      <Calendar size={10} />
-                      {fmtDate(task.dueDate || task.due_date)}
-                    </span>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+      {/* Quick Actions */}
+      <div className="bg-white border border-[#999]">
+        <div className="px-3 py-1.5 bg-gradient-to-r from-[#d0dce8] to-[#e8eef5] border-b border-[#999]">
+          <span className="text-[11px] font-bold text-[#333]">Быстрый доступ</span>
         </div>
-
-        {/* Upcoming Meetings */}
-        <div className="bg-white rounded-2xl shadow-modern overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
-                <Calendar size={20} className="text-purple-600" />
-              </div>
-              <div>
-                <h2 className="text-sm font-semibold text-gray-900">{t('home.meetings')}</h2>
-                <p className="text-xs text-gray-500">{meetings.filter(m => m.status === 'planned').length} {t('nav.meetings')}</p>
-              </div>
-            </div>
-            <Link to="/meetings" className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1">
-              {t('common.view')} <ArrowRight size={14} />
+        <div className="p-2 flex flex-wrap gap-1.5">
+          {[
+            { icon: '📥', label: 'Зарегистрировать входящий', color: '#0066cc', link: '/registry' },
+            { icon: '📤', label: 'Подготовить исходящий', color: '#2e7d32', link: '/documents' },
+            { icon: '📄', label: 'Внутренний документ', color: '#6a1b9a', link: '/documents' },
+            { icon: '✅', label: 'Поставить задачу', color: '#cc6600', link: '/tasks' },
+            { icon: '📅', label: 'Организовать совещание', color: '#c62828', link: '/meetings' },
+            { icon: '⭐', label: 'Утвердить документ', color: '#1b5e20', link: '/documents' },
+          ].map(action => (
+            <Link key={action.label} to={action.link} className="flex items-center gap-1 px-2 py-1 bg-[#f5f5f5] hover:bg-[#cce4ff] border border-[#ccc] hover:border-[#7ba8e0] rounded text-[10px] text-[#333] transition">
+              <span className="text-sm">{action.icon}</span>
+              {action.label}
             </Link>
-          </div>
-          <div className="divide-y divide-gray-50">
-            {upcomingMeetings.length === 0 ? (
-              <div className="py-12 text-center">
-                <Calendar size={48} className="mx-auto text-purple-300 mb-3" />
-                <p className="text-sm text-gray-500">{t('home.no_meetings')}</p>
-              </div>
-            ) : (
-              upcomingMeetings.map(m => (
-                <div key={m.id} className="px-6 py-3 hover:bg-gray-50 transition">
-                  <p className="text-sm font-medium text-gray-900">{m.title}</p>
-                  <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
-                    <span className="flex items-center gap-1">
-                      <Calendar size={12} />
-                      {fmtDate(m.date)} {m.time}
-                    </span>
-                    <span>•</span>
-                    <span>{m.location}</span>
-                    <span>•</span>
-                    <span className="flex items-center gap-1">
-                      <Users size={12} />
-                      {m.participantIds.length} {t('meetings.persons')}
-                    </span>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+          ))}
         </div>
       </div>
     </div>
