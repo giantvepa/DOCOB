@@ -83,7 +83,7 @@ export default function Layout() {
               {authUser?.avatar || currentUser.avatar}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">{authUser?.name || currentUser.name}</p>
+              <p className="text-sm font-medium text-gray-900 truncate">{authUser?.name || authUser?.first_name || currentUser.name || currentUser.first_name || 'Пользователь'}</p>
               <p className="text-xs text-gray-500 truncate">{authUser?.position || currentUser.position}</p>
             </div>
             <button
