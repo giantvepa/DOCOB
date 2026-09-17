@@ -145,8 +145,8 @@ export default function Documents() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {filtered.map(doc => {
-                  const statusConf = STATUS_CONFIG[doc.status];
-                  const author = getEmp(doc.authorId);
+                  const statusConf = STATUS_CONFIG[doc.status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.draft;
+                  const author = getEmp(doc.authorId || doc.author);
                   return (
                     <tr key={doc.id} className="hover:bg-gray-50 transition">
                       <td className="px-6 py-4">
@@ -162,7 +162,7 @@ export default function Documents() {
                       </td>
                       <td className="px-6 py-4">
                         <span className="text-xs text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
-                          {doc.type === 'incoming' ? t('nav.incoming') : doc.type === 'outgoing' ? t('nav.outgoing') : t('nav.internal')}
+                          {(doc.type || doc.doc_type) === 'incoming' ? t('nav.incoming') : (doc.type || doc.doc_type) === 'outgoing' ? t('nav.outgoing') : t('nav.internal')}
                         </span>
                       </td>
                       <td className="px-6 py-4">

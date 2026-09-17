@@ -14,8 +14,10 @@ export default function Reports() {
     documents.forEach(d => {
       byCategory[d.category] = (byCategory[d.category] || 0) + 1;
       byStatus[d.status] = (byStatus[d.status] || 0) + 1;
-      byType[d.type]++;
-      byAuthor[d.authorId] = (byAuthor[d.authorId] || 0) + 1;
+      const docType = d.type || d.doc_type || 'internal';
+      byType[docType] = (byType[docType] || 0) + 1;
+      const authorId = d.authorId || d.author;
+      byAuthor[authorId] = (byAuthor[authorId] || 0) + 1;
     });
 
     return { byCategory, byStatus, byType, byAuthor };
@@ -79,15 +81,16 @@ export default function Reports() {
           </h3>
           <div className="space-y-3">
             {Object.entries(stats.byAuthor).sort((a, b) => b[1] - a[1]).map(([authorId, count]) => {
-              const author = employees.find(e => e.id === authorId);
+              const author = employees.find(e => String(e.id) === String(authorId));
+              const authorName = author?.name || `${author?.first_name || ''} ${author?.last_name || ''}`.trim() || author?.username || author?.email || 'Неизвестно';
               return (
                 <div key={authorId} className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                    {author?.name.charAt(0)}
+                    {authorName.charAt(0)}
                   </div>
                   <div className="flex-1">
                     <div className="flex justify-between text-sm mb-1.5">
-                      <span className="text-gray-700 font-medium truncate">{author?.name.split(' ').slice(0, 2).join(' ')}</span>
+                      <span className="text-gray-700 font-medium truncate">{authorName.split(' ').slice(0, 2).join(' ')}</span>
                       <span className="text-gray-500">{count}</span>
                     </div>
                     <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">

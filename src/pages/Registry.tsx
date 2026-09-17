@@ -83,26 +83,31 @@ export default function Registry() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {filtered.map(doc => (
+              {filtered.map(doc => {
+                const author = getEmp(doc.authorId || doc.author);
+                const authorName = author?.name || `${author?.first_name || ''} ${author?.last_name || ''}`.trim() || 'Неизвестно';
+                
+                return (
                 <tr key={doc.id} className="hover:bg-gray-50 transition">
                   <td className="px-6 py-4 text-center text-xl">
-                    {doc.type === 'incoming' ? '📥' : doc.type === 'outgoing' ? '📤' : '📄'}
+                    {(doc.type || doc.doc_type) === 'incoming' ? '📥' : (doc.type || doc.doc_type) === 'outgoing' ? '📤' : '📄'}
                   </td>
                   <td className="px-6 py-4">
                     <Link to={`/documents/${doc.id}`} className="text-sm font-medium text-blue-600 hover:text-blue-700">
                       {doc.number}
                     </Link>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">{fmtDate(doc.createdAt)}</td>
+                  <td className="px-6 py-4 text-sm text-gray-500">{fmtDate(doc.createdAt || doc.created_at)}</td>
                   <td className="px-6 py-4">
                     <Link to={`/documents/${doc.id}`} className="text-sm text-gray-900 hover:text-blue-600 transition truncate block max-w-xs">
                       {doc.title}
                     </Link>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600">{doc.correspondent || '—'}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{getEmp(doc.authorId)?.name.split(' ').slice(0, 2).join(' ')}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600">{authorName.split(' ').slice(0, 2).join(' ')}</td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>
