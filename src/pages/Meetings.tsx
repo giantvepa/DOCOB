@@ -35,8 +35,8 @@ export default function Meetings() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {sorted.map(m => {
-          const org = getEmp(m.organizerId);
-          const participants = m.participantIds.map(id => getEmp(id)).filter(Boolean);
+          const org = getEmp(m.organizerId || m.organizer);
+          const participants = (m.participantIds || m.participants || []).map((id: any) => getEmp(id)).filter(Boolean);
           return (
             <div key={m.id} className="bg-white rounded-2xl shadow-modern hover-card overflow-hidden">
               <div className="p-6">
@@ -76,9 +76,9 @@ export default function Meetings() {
                     <span className="text-xs text-gray-500">{t('meetings.organizer')}:</span>
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-[10px] font-bold">
-                        {org?.name.charAt(0)}
+                        {(org?.name || org?.first_name || '?').charAt(0)}
                       </div>
-                      <span className="text-xs font-medium text-gray-700">{org?.name.split(' ').slice(0, 2).join(' ')}</span>
+                      <span className="text-xs font-medium text-gray-700">{(org?.name || `${org?.first_name || ''} ${org?.last_name || ''}`.trim() || 'Неизвестно').split(' ').slice(0, 2).join(' ')}</span>
                     </div>
                   </div>
                   <div className="flex -space-x-2">

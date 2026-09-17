@@ -104,10 +104,10 @@ export default function HomePage() {
                     <span className="px-3 py-1 bg-amber-50 text-amber-700 rounded-full text-xs font-medium">
                       {t('status.on_approval')}
                     </span>
-                    {doc.dueDate && (
+                    {(doc.dueDate || doc.due_date) && (
                       <span className="text-xs text-red-500 flex items-center gap-1">
                         <Calendar size={12} />
-                        {fmtDate(doc.dueDate)}
+                        {fmtDate(doc.dueDate || doc.due_date)}
                       </span>
                     )}
                   </div>
@@ -186,7 +186,7 @@ export default function HomePage() {
                     </span>
                     <span className="text-xs text-gray-500 flex items-center gap-1">
                       <Calendar size={10} />
-                      {fmtDate(task.dueDate)}
+                      {fmtDate(task.dueDate || task.due_date)}
                     </span>
                   </div>
                 </div>

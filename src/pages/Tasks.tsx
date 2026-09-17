@@ -104,9 +104,9 @@ export default function Tasks() {
             </div>
           ) : (
             filtered.map(task => {
-              const statusConf = STATUS_CONFIG[task.status];
-              const priorityConf = PRIORITY_CONFIG[task.priority];
-              const assignee = getEmp(task.assigneeId);
+              const statusConf = STATUS_CONFIG[task.status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.new;
+              const priorityConf = PRIORITY_CONFIG[task.priority as keyof typeof PRIORITY_CONFIG] || PRIORITY_CONFIG.normal;
+              const assignee = getEmp(task.assigneeId || task.assignee);
               return (
                 <div key={task.id} className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition">
                   <button
