@@ -1,24 +1,29 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { apiCall } from '../backend/server';
-import { getStoredToken, removeToken, storeToken } from '../backend/utils/jwt';
+import { djangoApi } from '../api/djangoClient';
 
 interface User {
-  id: string;
+  id: number;
+  username: string;
   email: string;
-  name: string;
+  first_name: string;
+  last_name: string;
+  name?: string;
   position: string;
   department: string;
   avatar: string;
   role: 'admin' | 'manager' | 'user';
-  createdAt: string;
+  phone: string;
+  is_active: boolean;
+  [key: string]: any;
 }
 
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  register: (data: Omit<User, 'id' | 'createdAt'> & { password: string }) => Promise<{ success: boolean; error?: string }>;
+  register: (data: any) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   isAuthenticated: boolean;
+  isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -26,61 +31,70 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check if token exists
-    const token = getStoredToken();
-    if (token) {
-      // Try to get user info
-      apiCall<User>('GET', '/api/auth/me').then(response => {
-        if (response.success && response.data) {
-          setUser(response.data);
-          setIsAuthenticated(true);
-        }
-      });
-    }
+    checkAuth();
   }, []);
+
+  const checkAuth = async () => {
+    const token = djangoApi.getToken();
+    if (token) {
+      try {
+        const userData = await djangoApi.getMe();
+        setUser(userData);
+        setIsAuthenticated(true);
+      } catch (error) {
+        djangoApi.clearToken();
+        setUser(null);
+        setIsAuthenticated(false);
+      }
+    }
+    setIsLoading(false);
+  };
 
   const login = async (email: string, password: string) => {
     try {
-      const response = await apiCall<{ token: string; user: User }>('POST', '/api/auth/login', { email, password });
-      
-      if (response.success && response.data) {
-        setUser(response.data.user);
+      const response = await djangoApi.login(email, password);
+      if (response.token) {
+        setUser(response.user);
         setIsAuthenticated(true);
         return { success: true };
-      } else {
-        return { success: false, error: response.error || 'Ошибка входа' };
       }
-    } catch (error) {
-      return { success: false, error: 'Ошибка входа' };
+      return { success: false, error: 'Неверный ответ сервера' };
+    } catch (error: any) {
+      return { success: false, error: error.message || 'Ошибка входа' };
     }
   };
 
-  const register = async (data: Omit<User, 'id' | 'createdAt'> & { password: string }) => {
+  const register = async (data: any) => {
     try {
-      const response = await apiCall<{ token: string; user: User }>('POST', '/api/auth/register', data);
-      
-      if (response.success && response.data) {
-        setUser(response.data.user);
+      const response = await djangoApi.register(data);
+      if (response.token) {
+        setUser(response.user);
         setIsAuthenticated(true);
         return { success: true };
-      } else {
-        return { success: false, error: response.error || 'Ошибка регистрации' };
       }
-    } catch (error) {
-      return { success: false, error: 'Ошибка регистрации' };
+      return { success: false, error: 'Неверный ответ сервера' };
+    } catch (error: any) {
+      return { success: false, error: error.message || 'Ошибка регистрации' };
     }
   };
 
-  const logout = () => {
-    removeToken();
-    setUser(null);
-    setIsAuthenticated(false);
+  const logout = async () => {
+    try {
+      await djangoApi.logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      djangoApi.clearToken();
+      setUser(null);
+      setIsAuthenticated(false);
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, isAuthenticated }}>
+    <AuthContext.Provider value={{ user, login, register, logout, isAuthenticated, isLoading }}>
       {children}
     </AuthContext.Provider>
   );
