@@ -18,11 +18,16 @@ export default function Documents() {
         showCorrespondent: true,
         showDueDate: true,
         showAuthor: true,
+        showTags: true,
       }}
       filters={{
         showTypeFilter: true,
         showStatusFilter: true,
         showPriorityFilter: true,
+        showCorrespondentFilter: true,
+        showAuthorFilter: true,
+        showDateFilter: true,
+        showTagFilter: true,
       }}
       searchable={true}
       sortable={true}
@@ -36,6 +41,10 @@ export default function Documents() {
       onBulkAction={(action, ids) => {
         console.log(`Массовое действие: ${action}`, ids);
         // TODO: Реализовать массовые действия
+      }}
+      onFilterChange={(filters) => {
+        console.log('Фильтры изменены:', filters);
+        // Можно использовать для сохранения фильтров в URL или localStorage
       }}
     />
   );

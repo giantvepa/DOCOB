@@ -118,11 +118,16 @@ export default function Registry() {
           showCorrespondent: true,
           showDueDate: true,
           showAuthor: true,
+          showTags: true,
         }}
         filters={{
           showTypeFilter: config.showTypeFilter,
           showStatusFilter: true,
           showPriorityFilter: true,
+          showCorrespondentFilter: true,
+          showAuthorFilter: true,
+          showDateFilter: true,
+          showTagFilter: true,
           defaultType: config.defaultType,
         }}
         searchable={true}
@@ -137,6 +142,10 @@ export default function Registry() {
         onBulkAction={(action, ids) => {
           console.log(`Массовое действие: ${action}`, ids);
           // TODO: Реализовать массовые действия
+        }}
+        onFilterChange={(filters) => {
+          console.log('Фильтры изменены:', filters);
+          // Можно использовать для сохранения фильтров в URL или localStorage
         }}
       />
     </div>

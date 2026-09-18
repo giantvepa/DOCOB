@@ -1,8 +1,9 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Search, Plus, FileText, MoreVertical, Inbox, Send, FileText as FileIcon,
-  CheckCircle2, Clock, XCircle, AlertCircle, ChevronDown, ChevronUp
+  CheckCircle2, Clock, XCircle, AlertCircle, ChevronDown, ChevronUp,
+  Filter, X, Calendar, Tag, User
 } from 'lucide-react';
 
 // ============ КОНФИГУРАЦИИ ============
@@ -53,7 +54,24 @@ export interface DocumentRecord {
   due_date?: string;
   createdAt: string;
   updatedAt: string;
+  tags?: string[];
   [key: string]: any;
+}
+
+export interface DateRange {
+  from?: string;
+  to?: string;
+}
+
+export interface FilterState {
+  search: string;
+  type: string;
+  status: string;
+  priority: string;
+  correspondent: string;
+  author: string | number;
+  dateRange: DateRange;
+  tags: string[];
 }
 
 export interface EmployeeRecord {
@@ -88,6 +106,7 @@ interface DocumentTableProps {
     showCorrespondent?: boolean;
     showDueDate?: boolean;
     showAuthor?: boolean;
+    showTags?: boolean;
   };
   
   // Фильтры
@@ -95,13 +114,19 @@ interface DocumentTableProps {
     showTypeFilter?: boolean;
     showStatusFilter?: boolean;
     showPriorityFilter?: boolean;
+    showCorrespondentFilter?: boolean;
+    showAuthorFilter?: boolean;
+    showDateFilter?: boolean;
+    showTagFilter?: boolean;
     defaultType?: string;
     defaultStatus?: string;
+    defaultPriority?: string;
   };
   
   // Действия
   onCreateClick?: () => void;
   onBulkAction?: (action: string, ids: (string | number)[]) => void;
+  onFilterChange?: (filters: FilterState) => void;
   createButtonLabel?: string;
   
   // Поведение
@@ -122,6 +147,7 @@ export default function DocumentTable({
   filters = {},
   onCreateClick,
   onBulkAction,
+  onFilterChange,
   createButtonLabel = 'Создать',
   searchable = true,
   sortable = true,
@@ -136,6 +162,7 @@ export default function DocumentTable({
     showCorrespondent = true,
     showDueDate = true,
     showAuthor = true,
+    showTags = false,
   } = columns;
 
   // Дефолтные значения фильтров
@@ -143,19 +170,48 @@ export default function DocumentTable({
     showTypeFilter = true,
     showStatusFilter = true,
     showPriorityFilter = true,
+    showCorrespondentFilter = false,
+    showAuthorFilter = false,
+    showDateFilter = false,
+    showTagFilter = false,
     defaultType = 'all',
     defaultStatus = 'all',
+    defaultPriority = 'all',
   } = filters;
 
-  // Состояния
+  // Состояния фильтров
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState(defaultType);
   const [statusFilter, setStatusFilter] = useState(defaultStatus);
-  const [priorityFilter, setPriorityFilter] = useState('all');
+  const [priorityFilter, setPriorityFilter] = useState(defaultPriority);
+  const [correspondentFilter, setCorrespondentFilter] = useState('');
+  const [authorFilter, setAuthorFilter] = useState<string | number>('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [tagFilter, setTagFilter] = useState<string[]>([]);
+  
+  // Состояния отображения
   const [viewMode, setViewMode] = useState<ViewMode>('table');
   const [sortField, setSortField] = useState<SortField>('updatedAt');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [selectedDocs, setSelectedDocs] = useState<Set<string | number>>(new Set());
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+
+  // Уникальные значения для фильтров
+  const uniqueCorrespondents = useMemo(() => {
+    const correspondents = new Set(documents.map(d => d.correspondent).filter(Boolean));
+    return Array.from(correspondents).sort();
+  }, [documents]);
+
+  const uniqueTags = useMemo(() => {
+    const tags = new Set<string>();
+    documents.forEach(d => {
+      if (d.tags) {
+        d.tags.forEach(tag => tags.add(tag));
+      }
+    });
+    return Array.from(tags).sort();
+  }, [documents]);
 
   // Фильтрация и сортировка
   const filtered = useMemo(() => {
@@ -176,6 +232,33 @@ export default function DocumentTable({
     if (typeFilter !== 'all') result = result.filter(d => d.type === typeFilter);
     if (statusFilter !== 'all') result = result.filter(d => d.status === statusFilter);
     if (priorityFilter !== 'all') result = result.filter(d => d.priority === priorityFilter);
+    
+    // Фильтр по корреспонденту
+    if (correspondentFilter) {
+      result = result.filter(d => d.correspondent === correspondentFilter);
+    }
+    
+    // Фильтр по автору
+    if (authorFilter) {
+      result = result.filter(d => 
+        d.authorId === authorFilter || d.author === authorFilter
+      );
+    }
+    
+    // Фильтр по дате
+    if (dateFrom) {
+      result = result.filter(d => new Date(d.createdAt) >= new Date(dateFrom));
+    }
+    if (dateTo) {
+      result = result.filter(d => new Date(d.createdAt) <= new Date(dateTo));
+    }
+    
+    // Фильтр по тегам
+    if (tagFilter.length > 0) {
+      result = result.filter(d => 
+        d.tags && tagFilter.some(tag => d.tags.includes(tag))
+      );
+    }
 
     // Сортировка
     if (sortable) {
@@ -209,7 +292,27 @@ export default function DocumentTable({
     }
 
     return result;
-  }, [documents, search, typeFilter, statusFilter, priorityFilter, sortField, sortDirection, sortable]);
+  }, [
+    documents, search, typeFilter, statusFilter, priorityFilter,
+    correspondentFilter, authorFilter, dateFrom, dateTo, tagFilter,
+    sortField, sortDirection, sortable
+  ]);
+
+  // Уведомление об изменении фильтров
+  useEffect(() => {
+    if (onFilterChange) {
+      onFilterChange({
+        search,
+        type: typeFilter,
+        status: statusFilter,
+        priority: priorityFilter,
+        correspondent: correspondentFilter,
+        author: authorFilter,
+        dateRange: { from: dateFrom, to: dateTo },
+        tags: tagFilter,
+      });
+    }
+  }, [search, typeFilter, statusFilter, priorityFilter, correspondentFilter, authorFilter, dateFrom, dateTo, tagFilter, onFilterChange]);
 
   // Утилиты
   const fmtDate = (d: string) => new Date(d).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -253,11 +356,25 @@ export default function DocumentTable({
     setSearch('');
     setTypeFilter(defaultType);
     setStatusFilter(defaultStatus);
-    setPriorityFilter('all');
+    setPriorityFilter(defaultPriority);
+    setCorrespondentFilter('');
+    setAuthorFilter('');
+    setDateFrom('');
+    setDateTo('');
+    setTagFilter([]);
     setSelectedDocs(new Set());
   };
 
-  const hasActiveFilters = search || typeFilter !== defaultType || statusFilter !== defaultStatus || priorityFilter !== 'all';
+  const hasActiveFilters = 
+    search || 
+    typeFilter !== defaultType || 
+    statusFilter !== defaultStatus || 
+    priorityFilter !== defaultPriority ||
+    correspondentFilter ||
+    authorFilter ||
+    dateFrom ||
+    dateTo ||
+    tagFilter.length > 0;
 
   // ============ RENDER ============
 
@@ -357,6 +474,28 @@ export default function DocumentTable({
             </select>
           )}
 
+          {/* Advanced Filters Toggle */}
+          {(showCorrespondentFilter || showAuthorFilter || showDateFilter || showTagFilter) && (
+            <button
+              onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+              className={`h-10 px-4 rounded-xl text-sm font-medium flex items-center gap-2 transition ${
+                showAdvancedFilters
+                  ? 'bg-blue-100 text-blue-700 border border-blue-300'
+                  : 'bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100'
+              }`}
+            >
+              <Filter size={16} />
+              Расширенные фильтры
+              {hasActiveFilters && (
+                <span className="px-1.5 py-0.5 bg-blue-500 text-white text-xs rounded-full">
+                  {
+                    [correspondentFilter, authorFilter, dateFrom, dateTo, tagFilter.length > 0].filter(Boolean).length
+                  }
+                </span>
+              )}
+            </button>
+          )}
+
           {/* View Toggle */}
           <div className="flex items-center bg-gray-100 rounded-xl p-1">
             <button
@@ -378,30 +517,191 @@ export default function DocumentTable({
           </div>
         </div>
 
+        {/* Advanced Filters Panel */}
+        {showAdvancedFilters && (
+          <div className="mt-4 pt-4 border-t border-gray-100 space-y-4 animate-fade-in">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Correspondent Filter */}
+              {showCorrespondentFilter && (
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                    Корреспондент
+                  </label>
+                  <select
+                    value={correspondentFilter}
+                    onChange={(e) => setCorrespondentFilter(e.target.value)}
+                    className="w-full h-10 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
+                  >
+                    <option value="">Все корреспонденты</option>
+                    {uniqueCorrespondents.map(corr => (
+                      <option key={corr} value={corr}>{corr}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Author Filter */}
+              {showAuthorFilter && (
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                    Автор
+                  </label>
+                  <select
+                    value={authorFilter}
+                    onChange={(e) => setAuthorFilter(e.target.value)}
+                    className="w-full h-10 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
+                  >
+                    <option value="">Все авторы</option>
+                    {employees.map(emp => (
+                      <option key={emp.id} value={emp.id}>
+                        {emp.name || `${emp.first_name || ''} ${emp.last_name || ''}`.trim() || emp.username || emp.email}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Date Range Filter */}
+              {showDateFilter && (
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                    <Calendar size={12} className="inline mr-1" />
+                    Период создания
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="date"
+                      value={dateFrom}
+                      onChange={(e) => setDateFrom(e.target.value)}
+                      className="flex-1 h-10 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
+                      placeholder="С"
+                    />
+                    <input
+                      type="date"
+                      value={dateTo}
+                      onChange={(e) => setDateTo(e.target.value)}
+                      className="flex-1 h-10 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
+                      placeholder="По"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Tag Filter */}
+              {showTagFilter && uniqueTags.length > 0 && (
+                <div className="md:col-span-2 lg:col-span-3">
+                  <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                    <Tag size={12} className="inline mr-1" />
+                    Теги
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {uniqueTags.map(tag => (
+                      <button
+                        key={tag}
+                        onClick={() => {
+                          if (tagFilter.includes(tag)) {
+                            setTagFilter(tagFilter.filter(t => t !== tag));
+                          } else {
+                            setTagFilter([...tagFilter, tag]);
+                          }
+                        }}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                          tagFilter.includes(tag)
+                            ? 'bg-blue-500 text-white'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                      >
+                        #{tag}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Active filters */}
         {hasActiveFilters && (
-          <div className="mt-3 pt-3 border-t border-gray-100 flex items-center gap-2 flex-wrap">
-            <span className="text-xs text-gray-500">Активные фильтры:</span>
-            {search && (
-              <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded-lg text-xs">
-                Поиск: "{search}"
-              </span>
-            )}
-            {typeFilter !== 'all' && (
-              <span className="px-2 py-1 bg-purple-50 text-purple-700 rounded-lg text-xs">
-                Тип: {TYPE_LABELS[typeFilter] || typeFilter}
-              </span>
-            )}
-            {statusFilter !== 'all' && (
-              <span className="px-2 py-1 bg-amber-50 text-amber-700 rounded-lg text-xs">
-                Статус: {STATUS_CONFIG[statusFilter]?.label}
-              </span>
-            )}
-            {priorityFilter !== 'all' && (
-              <span className="px-2 py-1 bg-red-50 text-red-700 rounded-lg text-xs">
-                Приоритет: {PRIORITY_CONFIG[priorityFilter]?.label}
-              </span>
-            )}
+          <div className="mt-3 pt-3 border-t border-gray-100">
+            <div className="flex items-center gap-2 flex-wrap mb-2">
+              <span className="text-xs text-gray-500 font-medium">Активные фильтры:</span>
+              <button
+                onClick={resetFilters}
+                className="text-xs text-red-600 hover:text-red-700 flex items-center gap-1"
+              >
+                <X size={12} />
+                Сбросить все
+              </button>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              {search && (
+                <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded-lg text-xs flex items-center gap-1">
+                  Поиск: "{search}"
+                  <button onClick={() => setSearch('')} className="hover:text-blue-900">
+                    <X size={10} />
+                  </button>
+                </span>
+              )}
+              {typeFilter !== 'all' && (
+                <span className="px-2 py-1 bg-purple-50 text-purple-700 rounded-lg text-xs flex items-center gap-1">
+                  Тип: {TYPE_LABELS[typeFilter] || typeFilter}
+                  <button onClick={() => setTypeFilter('all')} className="hover:text-purple-900">
+                    <X size={10} />
+                  </button>
+                </span>
+              )}
+              {statusFilter !== 'all' && (
+                <span className="px-2 py-1 bg-amber-50 text-amber-700 rounded-lg text-xs flex items-center gap-1">
+                  Статус: {STATUS_CONFIG[statusFilter]?.label}
+                  <button onClick={() => setStatusFilter('all')} className="hover:text-amber-900">
+                    <X size={10} />
+                  </button>
+                </span>
+              )}
+              {priorityFilter !== 'all' && (
+                <span className="px-2 py-1 bg-red-50 text-red-700 rounded-lg text-xs flex items-center gap-1">
+                  Приоритет: {PRIORITY_CONFIG[priorityFilter]?.label}
+                  <button onClick={() => setPriorityFilter('all')} className="hover:text-red-900">
+                    <X size={10} />
+                  </button>
+                </span>
+              )}
+              {correspondentFilter && (
+                <span className="px-2 py-1 bg-green-50 text-green-700 rounded-lg text-xs flex items-center gap-1">
+                  Корреспондент: {correspondentFilter}
+                  <button onClick={() => setCorrespondentFilter('')} className="hover:text-green-900">
+                    <X size={10} />
+                  </button>
+                </span>
+              )}
+              {authorFilter && (
+                <span className="px-2 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-xs flex items-center gap-1">
+                  Автор: {employees.find(e => e.id === authorFilter)?.name || 'Выбран'}
+                  <button onClick={() => setAuthorFilter('')} className="hover:text-indigo-900">
+                    <X size={10} />
+                  </button>
+                </span>
+              )}
+              {(dateFrom || dateTo) && (
+                <span className="px-2 py-1 bg-cyan-50 text-cyan-700 rounded-lg text-xs flex items-center gap-1">
+                  <Calendar size={10} />
+                  {dateFrom && dateTo ? `${dateFrom} - ${dateTo}` : dateFrom ? `С ${dateFrom}` : `По ${dateTo}`}
+                  <button onClick={() => { setDateFrom(''); setDateTo(''); }} className="hover:text-cyan-900">
+                    <X size={10} />
+                  </button>
+                </span>
+              )}
+              {tagFilter.length > 0 && (
+                <span className="px-2 py-1 bg-pink-50 text-pink-700 rounded-lg text-xs flex items-center gap-1">
+                  <Tag size={10} />
+                  Теги: {tagFilter.length}
+                  <button onClick={() => setTagFilter([])} className="hover:text-pink-900">
+                    <X size={10} />
+                  </button>
+                </span>
+              )}
+            </div>
           </div>
         )}
       </div>
