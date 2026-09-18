@@ -2,6 +2,7 @@ import { useContext, useState } from 'react';
 import { AppContext } from '../App';
 import { useAuth } from '../contexts/AuthContext';
 import { CheckSquare, Plus, CheckCircle2, Calendar, User, Clock } from 'lucide-react';
+import CreateTaskModal from '../components/CreateTaskModal';
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
   new: { label: 'Новая', color: 'text-blue-600', bg: 'bg-blue-100' },
@@ -23,6 +24,7 @@ export default function Tasks() {
   const { user } = useAuth();
   const [filter, setFilter] = useState<'all' | 'my' | 'assigned'>('my');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   const filtered = tasks.filter(task => {
     if (filter === 'my' && task.assigneeId !== user?.id) return false;
@@ -52,11 +54,16 @@ export default function Tasks() {
           <h1 className="text-2xl font-bold text-gray-900">{t('tasks.title')}</h1>
           <p className="text-sm text-gray-500 mt-1">{filtered.length} {t('common.records')}</p>
         </div>
-        <button className="btn-primary px-6 py-3 rounded-xl text-white text-sm font-medium flex items-center gap-2">
+        <button 
+          onClick={() => setShowCreateModal(true)}
+          className="btn-primary px-6 py-3 rounded-xl text-white text-sm font-medium flex items-center gap-2"
+        >
           <Plus size={18} />
           {t('tasks.new_task')}
         </button>
       </div>
+
+      {showCreateModal && <CreateTaskModal onClose={() => setShowCreateModal(false)} />}
 
       {/* Filters */}
       <div className="bg-white rounded-2xl shadow-modern p-4">
