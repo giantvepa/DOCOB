@@ -2,15 +2,18 @@ import { useContext } from 'react';
 import { AppContext } from '../App';
 import DocumentTable from '../components/DocumentTable';
 
-export default function Documents() {
+export default function Drafts() {
   const { documents, employees } = useContext(AppContext);
+
+  // Фильтрация только черновиков
+  const draftDocs = documents.filter(d => d.status === 'draft');
 
   return (
     <DocumentTable
-      title="Все документы"
-      documents={documents}
+      title="Черновики"
+      documents={draftDocs}
       employees={employees}
-      totalCount={documents.length}
+      totalCount={draftDocs.length}
       columns={{
         showCheckbox: true,
         showType: true,
@@ -18,33 +21,25 @@ export default function Documents() {
         showCorrespondent: true,
         showDueDate: true,
         showAuthor: true,
-        showTags: true,
       }}
       filters={{
         showTypeFilter: true,
-        showStatusFilter: true,
+        showStatusFilter: false, // Не показываем фильтр статуса, т.к. уже отфильтровано
         showPriorityFilter: true,
-        showCorrespondentFilter: true,
-        showAuthorFilter: true,
-        showDateFilter: true,
-        showTagFilter: true,
+        defaultStatus: 'draft',
       }}
       searchable={true}
       sortable={true}
       selectable={true}
       linkPrefix="/documents"
-      createButtonLabel="Создать документ"
+      createButtonLabel="Создать черновик"
       onCreateClick={() => {
-        // TODO: Открыть модальное окно создания документа
-        console.log('Создание нового документа');
+        // TODO: Открыть модальное окно создания черновика
+        console.log('Создание нового черновика');
       }}
       onBulkAction={(action, ids) => {
         console.log(`Массовое действие: ${action}`, ids);
         // TODO: Реализовать массовые действия
-      }}
-      onFilterChange={(filters) => {
-        console.log('Фильтры изменены:', filters);
-        // Можно использовать для сохранения фильтров в URL или localStorage
       }}
     />
   );
