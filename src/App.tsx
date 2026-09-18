@@ -12,6 +12,7 @@ import Meetings from './pages/Meetings';
 import Registry from './pages/Registry';
 import Employees from './pages/Employees';
 import Reports from './pages/Reports';
+import Drafts from './pages/Drafts';
 import type { Document, Task, Meeting, Employee, Language, DocStatus, DocType, DocCategory, TaskStatus, TaskPriority } from './types';
 
 // Переводы
@@ -328,6 +329,7 @@ function AppContent() {
             <Route path="registry" element={<Registry />} />
             <Route path="employees" element={<Employees />} />
             <Route path="reports" element={<Reports />} />
+            <Route path="drafts" element={<Drafts />} />
           </Route>
         </Routes>
       </BrowserRouter>

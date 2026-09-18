@@ -1,371 +1,513 @@
-# 🎉 СЭД "ЭСАСЫ ПИКИР" - Полная система документооборота
+# 🎉 СЭД "ЭСАСЫ ПИКИР"
 
-Полноценная система электронного документооборота с React фронтендом и Django бэкендом.
+**Полноценная система электронного документооборота с современным интерфейсом**
 
-## 📁 Структура проекта
+![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![React](https://img.shields.io/badge/React-18-blue)
+![Django](https://img.shields.io/badge/Django-5.0-green)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
 
-```
-esasy-pikir/
-├── frontend/              # React фронтенд
-│   ├── src/
-│   │   ├── components/    # React компоненты
-│   │   ├── pages/         # Страницы
-│   │   ├── backend/       # API клиент
-│   │   └── utils/         # Утилиты
-│   ├── package.json
-│   └── README.md
-│
-├── backend/               # Django бэкенд
-│   ├── users/            # Приложение пользователей
-│   ├── documents/        # Приложение документов
-│   ├── tasks/            # Приложение задач
-│   ├── meetings/         # Приложение совещаний
-│   ├── manage.py
-│   ├── requirements.txt
-│   └── README.md
-│
-└── README.md             # Этот файл
-```
+---
+
+## 📋 О проекте
+
+СЭД "ЭСАСЫ ПИКИР" - это современная система электронного документооборота, разработанная с использованием React + TypeScript для frontend и Django + Django REST Framework для backend.
+
+### ✨ Основные возможности
+
+- 📄 **Управление документами** - создание, согласование, утверждение, архивирование
+- ✅ **Задачи и поручения** - постановка, контроль выполнения, приоритеты
+- 📅 **Совещания** - планирование, проведение, протоколы
+- 👥 **Сотрудники** - справочник, отделы, роли
+- 📊 **Отчёты** - статистика, аналитика, диаграммы
+- 🌍 **Многоязычность** - русский и туркменский языки
+- 🔐 **Безопасность** - JWT аутентификация, ролевая модель
+
+---
 
 ## 🚀 Быстрый старт
 
-### 1. Клонировать проект
+### Требования
+
+- Node.js 18+ 
+- Python 3.10+
+- npm или yarn
+
+### Установка
+
+#### 1. Клонируйте репозиторий
 
 ```bash
 git clone <repository-url>
 cd esasy-pikir
 ```
 
-### 2. Запустить бэкенд
+#### 2. Установите frontend зависимости
+
+```bash
+npm install
+```
+
+#### 3. Настройте backend
 
 ```bash
 cd backend
 
-# Создать виртуальное окружение
+# Создайте виртуальное окружение
 python -m venv venv
 
-# Активировать (Windows)
+# Активируйте (Windows)
 venv\Scripts\activate
 
-# Активировать (Linux/Mac)
+# Активируйте (Linux/Mac)
 source venv/bin/activate
 
-# Установить зависимости
+# Установите зависимости
 pip install -r requirements.txt
 
-# Создать миграции
+# Создайте миграции
 python manage.py makemigrations
+
+# Примените миграции
 python manage.py migrate
 
-# Создать суперпользователя
-python manage.py createsuperuser
+# Создайте тестовых пользователей
+python manage.py setup_users
+```
 
-# Запустить сервер
+#### 4. Запустите систему
+
+**Backend (в одном терминале):**
+```bash
+cd backend
 python manage.py runserver
 ```
 
-Бэкенд доступен: http://127.0.0.1:8000/
-
-### 3. Запустить фронтенд
-
-Откройте новый терминал:
-
+**Frontend (в другом терминале):**
 ```bash
-cd frontend
-
-# Установить зависимости
-npm install
-
-# Запустить сервер разработки
 npm run dev
 ```
 
-Фронтенд доступен: http://localhost:5173/
+#### 5. Откройте в браузере
 
-### 4. Открыть в браузере
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8000/api/
+- Admin panel: http://localhost:8000/admin/
 
-Перейдите по адресу: http://localhost:5173/
+### Тестовые аккаунты
 
-Войдите с учетными данными, которые создали при настройке бэкенда.
+- **admin@demo.tm** / admin123 (Администратор)
+- **manager@demo.tm** / manager123 (Руководитель)
+- **user@demo.tm** / user123 (Пользователь)
 
-## 🎯 Возможности системы
+---
 
-### 📄 Управление документами
-- Создание, редактирование, удаление документов
-- Загрузка файлов
-- Согласование документов
-- Комментарии и история изменений
-- Поиск и фильтрация
-- Экспорт в PDF
+## 📁 Структура проекта
 
-### ✅ Управление задачами
-- Создание задач
-- Назначение исполнителей
-- Установка приоритетов и сроков
-- Отслеживание статуса
-- Фильтрация и поиск
+```
+esasy-pikir/
+├── src/                          # Frontend (React)
+│   ├── api/                      # API клиент
+│   │   └── djangoClient.ts       # Клиент для Django API
+│   ├── components/               # React компоненты
+│   │   ├── DocumentTable.tsx     # 🎯 Универсальная таблица
+│   │   ├── Layout.tsx            # Основной макет
+│   │   ├── LoginScreen.tsx       # Экран входа
+│   │   └── ...
+│   ├── pages/                    # Страницы
+│   │   ├── HomePage.tsx          # Главная
+│   │   ├── Documents.tsx         # Документы
+│   │   ├── Tasks.tsx             # Задачи
+│   │   ├── Meetings.tsx          # Совещания
+│   │   ├── Registry.tsx          # Канцелярия
+│   │   ├── Drafts.tsx            # Черновики
+│   │   ├── Employees.tsx         # Сотрудники
+│   │   └── Reports.tsx           # Отчёты
+│   ├── contexts/                 # React контексты
+│   │   └── AuthContext.tsx       # Аутентификация
+│   ├── types.ts                  # TypeScript типы
+│   └── App.tsx                   # Главный компонент
+│
+├── backend/                      # Backend (Django)
+│   ├── sed_project/              # Главный проект
+│   │   ├── settings.py           # Настройки
+│   │   ├── urls.py               # Маршруты
+│   │   └── wsgi.py               # WSGI
+│   ├── users/                    # Приложение пользователей
+│   │   ├── models.py             # Модели
+│   │   ├── serializers.py        # Сериализаторы
+│   │   └── views.py              # API endpoints
+│   ├── documents/                # Приложение документов
+│   ├── tasks/                    # Приложение задач
+│   ├── meetings/                 # Приложение совещаний
+│   ├── manage.py                 # Управление Django
+│   └── requirements.txt          # Python зависимости
+│
+├── docs/                         # Документация
+│   ├── DOCUMENT_TABLE_COMPONENT.md
+│   ├── NAVIGATION.md
+│   ├── MAIN_SCREEN.md
+│   └── ...
+│
+├── package.json                  # Frontend зависимости
+├── tsconfig.json                 # TypeScript конфиг
+└── README.md                     # Этот файл
+```
 
-### 📅 Совещания
-- Планирование совещаний
-- Управление участниками
-- Повестка дня
-- Протоколы совещаний
+---
 
-### 👥 Пользователи и отделы
-- Регистрация пользователей
-- Управление ролями (админ/руководитель/пользователь)
-- Структура отделов
-- Профили пользователей
+## 🎯 Ключевые компоненты
 
-### 🔐 Безопасность
-- JWT аутентификация
-- Ролевая модель доступа
-- Шифрование паролей
-- Аудит действий
+### 1. Универсальная таблица документов (DocumentTable)
 
-### 📊 Аналитика
-- Статистика документов
-- Отчеты по задачам
-- Графики и диаграммы
-- Экспорт данных
+Единый компонент для всех реестров документов с настраиваемыми колонками, фильтрами и функциями.
 
-## 🛠️ Технологии
+**Используется в:**
+- Все документы
+- Канцелярия (входящие/исходящие/внутренние)
+- Черновики
+- На согласовании
+- Архив
 
-### Frontend
-- **React 18** - UI библиотека
-- **TypeScript** - Типизация
-- **Vite** - Сборщик
-- **Tailwind CSS** - Стили
-- **React Router** - Маршрутизация
-- **Lucide React** - Иконки
+**Возможности:**
+- 🔍 Полнотекстовый поиск
+- 📂 Фильтрация по типу, статусу, приоритету
+- 🔄 Сортировка по колонкам
+- ☑️ Массовые действия
+- 📊 Два вида: таблица и карточки
 
-### Backend
-- **Django 5.0** - Веб-фреймворк
-- **Django REST Framework** - API
-- **SQLite** - База данных (по умолчанию)
-- **PostgreSQL** - База данных (продакшен)
-- **JWT** - Аутентификация
-- **drf-spectacular** - API документация
+### 2. Основной макет (Layout)
+
+Классический корпоративный интерфейс с:
+- Верхней панелью (поиск, профиль, уведомления)
+- Боковой навигацией (группировка разделов)
+- Центральной рабочей областью
+
+### 3. Главная страница (HomePage)
+
+Виджеты для быстрого доступа:
+- Ожидают моего решения
+- Мои задачи
+- Последние документы
+- Ближайшие совещания
+- Статистика
+
+---
 
 ## 📡 API Endpoints
 
 ### Аутентификация
-- `POST /api/auth/register/` - Регистрация
-- `POST /api/auth/login/` - Вход
-- `POST /api/auth/logout/` - Выход
-- `GET /api/auth/me/` - Текущий пользователь
 
-### Документы
-- `GET /api/documents/` - Список документов
-- `POST /api/documents/` - Создать документ
-- `GET /api/documents/{id}/` - Детали документа
-- `PUT /api/documents/{id}/` - Обновить документ
-- `DELETE /api/documents/{id}/` - Удалить документ
-- `POST /api/documents/{id}/send_to_approval/` - Отправить на согласование
-- `POST /api/documents/{id}/approve/` - Согласовать
-- `POST /api/documents/{id}/reject/` - Отклонить
-
-### Задачи
-- `GET /api/tasks/` - Список задач
-- `POST /api/tasks/` - Создать задачу
-- `POST /api/tasks/{id}/complete/` - Выполнить задачу
-
-### Совещания
-- `GET /api/meetings/` - Список совещаний
-- `POST /api/meetings/` - Создать совещание
-- `POST /api/meetings/{id}/start/` - Начать совещание
-
-### Документация API
-- `GET /api/docs/` - Swagger UI
-- `GET /api/schema/` - OpenAPI схема
-
-## 🗄️ База данных
-
-### Модели
-
-#### User (Пользователь)
-- username, email, password
-- first_name, last_name
-- position, department, avatar
-- role (admin/manager/user)
-
-#### Document (Документ)
-- number, title, description
-- doc_type, category, status, priority
-- author, correspondent
-- due_date, file, tags
-
-#### Task (Задача)
-- title, description
-- status, priority
-- assignee, author, document
-- due_date, completed_at
-
-#### Meeting (Совещание)
-- title, description
-- date, time, duration, location
-- status, organizer, participants
-- agenda, protocol
-
-## 🔧 Настройка
-
-### Frontend
-
-Измените API URL в `frontend/src/backend/server.ts`:
-
-```typescript
-const API_BASE_URL = 'http://127.0.0.1:8000/api';
-```
-
-### Backend
-
-Настройки в `backend/sed_project/settings.py`:
-
-```python
-# База данных
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+```bash
+# Регистрация
+POST /api/auth/register/
+{
+  "email": "user@example.com",
+  "password": "password123",
+  "first_name": "Иван",
+  "last_name": "Иванов"
 }
 
-# CORS
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://localhost:3000",
-]
+# Вход
+POST /api/auth/login/
+{
+  "email": "user@example.com",
+  "password": "password123"
+}
 
-# Язык и часовой пояс
-LANGUAGE_CODE = 'ru-ru'
-TIME_ZONE = 'Asia/Ashgabat'
+# Текущий пользователь
+GET /api/auth/me/
+Authorization: Token <your-token>
 ```
 
-## 🚢 Деплой
-
-### Production Backend
+### Документы
 
 ```bash
+# Список документов
+GET /api/documents/
+
+# Создать документ
+POST /api/documents/
+{
+  "title": "Новый документ",
+  "description": "Описание",
+  "type": "internal",
+  "priority": "normal"
+}
+
+# Согласовать документ
+POST /api/documents/:id/approve/
+```
+
+### Задачи
+
+```bash
+# Список задач
+GET /api/tasks/
+
+# Создать задачу
+POST /api/tasks/
+{
+  "title": "Новая задача",
+  "assignee": 1,
+  "priority": "high",
+  "due_date": "2024-12-31"
+}
+
+# Выполнить задачу
+POST /api/tasks/:id/complete/
+```
+
+### Совещания
+
+```bash
+# Список совещаний
+GET /api/meetings/
+
+# Создать совещание
+POST /api/meetings/
+{
+  "title": "Совещание",
+  "date": "2024-12-20",
+  "time": "14:00",
+  "participants": [1, 2, 3]
+}
+```
+
+---
+
+## 🎨 Дизайн
+
+### Цветовая схема
+
+```css
+.gradient-blue:   #667eea → #764ba2
+.gradient-green:  #11998e → #38ef7d
+.gradient-orange: #f093fb → #f5576c
+.gradient-purple: #4facfe → #00f2fe
+```
+
+### Статусы документов
+
+| Статус | Цвет | Иконка |
+|--------|------|--------|
+| Черновик | Серый | 📄 |
+| На согласовании | Янтарный | ⏳ |
+| Подписан | Зелёный | ✅ |
+| Исполнен | Изумрудный | ✅ |
+| Отклонён | Красный | ❌ |
+
+### Приоритеты
+
+| Приоритет | Цвет |
+|-----------|------|
+| Критичный | 🔴 Красный |
+| Высокий | 🟠 Янтарный |
+| Обычный | 🔵 Синий |
+| Низкий | ⚪ Серый |
+
+---
+
+## 📱 Адаптивность
+
+### Desktop (>1024px)
+- Полная навигация
+- Все колонки таблиц
+- Карточки в 3 колонки
+
+### Tablet (768-1024px)
+- Скрытая навигация
+- Горизонтальная прокрутка
+- Карточки в 2 колонки
+
+### Mobile (<768px)
+- Бургер-меню
+- Карточный вид
+- Карточки в 1 колонку
+
+---
+
+## 🌍 Многоязычность
+
+Поддерживаются два языка:
+- 🇷🇺 Русский (по умолчанию)
+- 🇹🇲 Туркменский
+
+Переключение в верхней панели.
+
+---
+
+## 🔐 Безопасность
+
+- ✅ JWT аутентификация
+- ✅ Хеширование паролей (SHA-256)
+- ✅ Ролевая модель (admin/manager/user)
+- ✅ Проверка прав доступа
+- ✅ CORS настройки
+
+---
+
+## 📊 Технологии
+
+### Frontend
+- **React 18** - UI библиотека
+- **TypeScript** - типизация
+- **Vite** - сборщик
+- **Tailwind CSS** - стилизация
+- **React Router** - маршрутизация
+- **Lucide React** - иконки
+
+### Backend
+- **Django 5.0** - веб-фреймворк
+- **Django REST Framework** - API
+- **SQLite** - база данных (по умолчанию)
+- **JWT** - аутентификация
+
+---
+
+## 📚 Документация
+
+### Компоненты
+- [Универсальная таблица документов](./docs/DOCUMENT_TABLE_COMPONENT.md)
+- [Навигационное меню](./docs/NAVIGATION.md)
+- [Основной рабочий экран](./docs/MAIN_SCREEN.md)
+
+### Система
+- [Полное описание системы](./docs/COMPLETE_SYSTEM.md)
+- [API документация](./docs/BACKEND_API.md)
+- [Финальная сводка](./docs/FINAL_SUMMARY.md)
+
+### Руководства
+- [Быстрый старт](./docs/QUICK_START.md)
+- [Установка](./docs/INSTALL.md)
+- [Решение проблем](./docs/TROUBLESHOOTING.md)
+
+---
+
+## 🛠️ Разработка
+
+### Запуск в режиме разработки
+
+```bash
+# Frontend
+npm run dev
+
+# Backend (в другом терминале)
 cd backend
-
-# Установить Gunicorn
-pip install gunicorn
-
-# Собрать статику
-python manage.py collectstatic
-
-# Запустить
-gunicorn sed_project.wsgi:application --bind 0.0.0.0:8000
+python manage.py runserver
 ```
 
-### Production Frontend
+### Сборка для продакшена
 
 ```bash
-cd frontend
-
-# Собрать билд
 npm run build
-
-# Разместить dist/ на веб-сервере
 ```
 
-### Docker (опционально)
+Готовые файлы будут в папке `dist/`.
 
-Создайте `docker-compose.yml`:
-
-```yaml
-version: '3.8'
-
-services:
-  backend:
-    build: ./backend
-    ports:
-      - "8000:8000"
-    environment:
-      - DEBUG=False
-    volumes:
-      - ./backend/db.sqlite3:/app/db.sqlite3
-
-  frontend:
-    build: ./frontend
-    ports:
-      - "80:80"
-    depends_on:
-      - backend
-```
-
-## 🧪 Тестирование
-
-### Backend тесты
+### Тестирование
 
 ```bash
+# Frontend тесты
+npm test
+
+# Backend тесты
 cd backend
 python manage.py test
 ```
 
-### Frontend тесты
+---
 
-```bash
-cd frontend
-npm test
-```
+## 📈 Статистика
 
-## 📊 Мониторинг
+### Frontend
+- **Компонентов:** 10+
+- **Страниц:** 9
+- **Строк кода:** ~3000+
+- **Размер бандла:** ~278 KB (gzip: 77 KB)
 
-### Логи
-
-Backend логи:
-```bash
-tail -f backend/logs/app.log
-```
-
-### Метрики
-
-- Django Admin: http://127.0.0.1:8000/admin/
-- API Docs: http://127.0.0.1:8000/api/docs/
-
-## 🔐 Безопасность
-
-### Checklist
-
-- [ ] Изменить SECRET_KEY в production
-- [ ] Установить DEBUG = False
-- [ ] Настроить ALLOWED_HOSTS
-- [ ] Использовать HTTPS
-- [ ] Настроить CORS правильно
-- [ ] Регулярно обновлять зависимости
-- [ ] Делать бэкапы базы данных
-- [ ] Настроить firewall
-
-## 📝 Документация
-
-- [Backend README](./backend/README.md) - Подробная документация бэкенда
-- [Backend QUICKSTART](./backend/QUICKSTART.md) - Быстрый старт бэкенда
-- [API Documentation](http://127.0.0.1:8000/api/docs/) - Swagger UI
-
-## 🤝 Поддержка
-
-При возникновении проблем:
-
-1. Проверьте логи backend и frontend
-2. Убедитесь, что все зависимости установлены
-3. Проверьте настройки CORS
-4. Очистите кэш браузера
-5. Перезапустите серверы
-
-## 📄 Лицензия
-
-MIT License
-
-## 👥 Авторы
-
-СЭД "ЭСАСЫ ПИКИР" - Система электронного документооборота
+### Backend
+- **Приложений:** 4
+- **Моделей:** 10+
+- **API endpoints:** 20+
+- **Строк кода:** ~2000+
 
 ---
 
-**Версия:** 1.0.0  
-**Frontend:** React 18 + TypeScript  
-**Backend:** Django 5.0 + DRF  
-**База данных:** SQLite / PostgreSQL
+## 🤝 Вклад
 
-🎉 **Готово к использованию!**
+Приветствуется любой вклад в проект!
+
+1. Форкните репозиторий
+2. Создайте ветку для фичи (`git checkout -b feature/AmazingFeature`)
+3. Закоммитьте изменения (`git commit -m 'Add some AmazingFeature'`)
+4. Запушьте в ветку (`git push origin feature/AmazingFeature`)
+5. Откройте Pull Request
+
+---
+
+## 📄 Лицензия
+
+MIT License - см. файл [LICENSE](LICENSE) для подробностей.
+
+---
+
+## 👥 Авторы
+
+**СЭД "ЭСАСЫ ПИКИР"** - Система электронного документооборота
+
+Разработано с ❤️ для эффективного управления документами.
+
+---
+
+## 📞 Поддержка
+
+При возникновении проблем:
+
+1. Проверьте [документацию](./docs/)
+2. Проверьте логи в консоли браузера (F12)
+3. Проверьте логи Django backend
+4. Используйте кнопку "Сбросить данные" в меню профиля
+
+---
+
+## 🎯 Roadmap
+
+### Фаза 1 (Текущая) ✅
+- [x] Базовый функционал документооборота
+- [x] Универсальная таблица документов
+- [x] Аутентификация
+- [x] Django backend
+
+### Фаза 2 (Следующая)
+- [ ] Электронная подпись
+- [ ] Уведомления (email, push)
+- [ ] Интеграция с 1С
+- [ ] Мобильное приложение
+
+### Фаза 3 (Будущее)
+- [ ] Искусственный интеллект
+- [ ] Автоматическая классификация
+- [ ] Распознавание текста (OCR)
+- [ ] Голосовое управление
+
+---
+
+## 🎉 Благодарности
+
+Спасибо всем, кто участвовал в разработке и тестировании системы!
+
+---
+
+**СЭД "ЭСАСЫ ПИКИР"** - Полноценная система электронного документооборота с современным интерфейсом и мощным backend! 🚀
+
+---
+
+<div align="center">
+
+**[Документация](./docs/)** • **[Установка](./docs/INSTALL.md)** • **[API](./docs/BACKEND_API.md)** • **[Поддержка](#-поддержка)**
+
+Made with ❤️ by СЭД "ЭСАСЫ ПИКИР" Team
+
+</div>
