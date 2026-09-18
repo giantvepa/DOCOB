@@ -1,9 +1,11 @@
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
 import { AppContext } from '../App';
 import { Calendar, MapPin, Clock, Users, Plus } from 'lucide-react';
+import CreateMeetingModal from '../components/CreateMeetingModal';
 
 export default function Meetings() {
   const { meetings, employees, t } = useContext(AppContext);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const getEmp = (id: string) => employees.find(e => e.id === id);
   const fmtDate = (d: string) => new Date(d).toLocaleDateString('ru-RU', { weekday: 'short', day: 'numeric', month: 'long' });
 
@@ -19,11 +21,16 @@ export default function Meetings() {
           <h1 className="text-2xl font-bold text-gray-900">{t('meetings.title')}</h1>
           <p className="text-sm text-gray-500 mt-1">{meetings.length} {t('common.records')}</p>
         </div>
-        <button className="btn-primary px-6 py-3 rounded-xl text-white text-sm font-medium flex items-center gap-2">
+        <button 
+          onClick={() => setShowCreateModal(true)}
+          className="btn-primary px-6 py-3 rounded-xl text-white text-sm font-medium flex items-center gap-2"
+        >
           <Plus size={18} />
           {t('meetings.create')}
         </button>
       </div>
+
+      {showCreateModal && <CreateMeetingModal onClose={() => setShowCreateModal(false)} />}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {sorted.map(m => {

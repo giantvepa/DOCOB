@@ -1,11 +1,13 @@
 import { useContext, useState } from 'react';
 import { AppContext } from '../App';
 import DocumentTable from '../components/DocumentTable';
+import CreateDocumentModal from '../components/CreateDocumentModal';
 import { Inbox, Send, FileText } from 'lucide-react';
 
 export default function Registry() {
   const { documents, employees } = useContext(AppContext);
   const [activeTab, setActiveTab] = useState<'incoming' | 'outgoing' | 'internal'>('incoming');
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   // Фильтрация по типу
   const filteredDocs = documents.filter(d => d.type === activeTab);
@@ -135,10 +137,7 @@ export default function Registry() {
         selectable={true}
         linkPrefix="/documents"
         createButtonLabel="Зарегистрировать документ"
-        onCreateClick={() => {
-          // TODO: Открыть модальное окно регистрации документа
-          console.log(`Регистрация нового ${activeTab} документа`);
-        }}
+        onCreateClick={() => setShowCreateModal(true)}
         onBulkAction={(action, ids) => {
           console.log(`Массовое действие: ${action}`, ids);
           // TODO: Реализовать массовые действия
@@ -148,6 +147,8 @@ export default function Registry() {
           // Можно использовать для сохранения фильтров в URL или localStorage
         }}
       />
+
+      {showCreateModal && <CreateDocumentModal onClose={() => setShowCreateModal(false)} />}
     </div>
   );
 }

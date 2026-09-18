@@ -1,12 +1,14 @@
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AppContext } from '../App';
 import { useAuth } from '../contexts/AuthContext';
 import { FileText, Clock, CheckCircle2, AlertTriangle, Calendar, Users, TrendingUp, ArrowRight, Plus } from 'lucide-react';
+import CreateDocumentModal from '../components/CreateDocumentModal';
 
 export default function HomePage() {
   const { documents, tasks, meetings, t } = useContext(AppContext);
   const { user } = useAuth();
+  const [showCreateDoc, setShowCreateDoc] = useState(false);
 
   const myPendingDocs = documents.filter(d => d.approvals.some(a => a.userId === user?.id && a.status === 'waiting'));
   const myTasks = tasks.filter(task => task.assigneeId === user?.id && task.status !== 'completed');
@@ -26,11 +28,16 @@ export default function HomePage() {
             {new Date().toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
         </div>
-        <button className="btn-primary px-6 py-3 rounded-xl text-white text-sm font-medium flex items-center gap-2">
+        <button 
+          onClick={() => setShowCreateDoc(true)}
+          className="btn-primary px-6 py-3 rounded-xl text-white text-sm font-medium flex items-center gap-2"
+        >
           <Plus size={18} />
           {t('toolbar.create')}
         </button>
       </div>
+
+      {showCreateDoc && <CreateDocumentModal onClose={() => setShowCreateDoc(false)} />}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

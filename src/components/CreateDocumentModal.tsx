@@ -1,129 +1,155 @@
 import { useState, useContext } from 'react';
 import { AppContext } from '../App';
-import type { Document, DocType, DocCategory, TaskPriority } from '../types';
-import { X, Upload, FileText } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { X, FileText } from 'lucide-react';
 
 interface Props {
   onClose: () => void;
 }
 
 export default function CreateDocumentModal({ onClose }: Props) {
-  const { setDocuments, employees, currentUser } = useContext(AppContext);
-  
+  const { setDocuments, employees } = useContext(AppContext);
+  const { user } = useAuth();
+
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    type: 'internal' as DocType,
-    category: 'Другое' as DocCategory,
+    type: 'internal' as 'incoming' | 'outgoing' | 'internal',
+    category: 'Другое',
+    priority: 'normal' as 'low' | 'normal' | 'high' | 'critical',
     correspondent: '',
-    priority: 'normal' as TaskPriority,
     dueDate: '',
-    tags: '',
   });
 
-  const [uploading, setUploading] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const validate = () => {
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.title.trim()) {
+      newErrors.title = 'Название обязательно';
+    } else if (formData.title.length < 3) {
+      newErrors.title = 'Минимум 3 символа';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.title.trim()) return;
+    if (!validate()) return;
 
-    setUploading(true);
+    setIsCreating(true);
 
-    setTimeout(() => {
-      const newDoc: Document = {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      const newDoc = {
         id: Date.now().toString(),
         number: `${formData.type === 'incoming' ? 'ВХ' : formData.type === 'outgoing' ? 'ИСХ' : 'ВН'}-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 999)).padStart(3, '0')}`,
         title: formData.title,
         description: formData.description,
         type: formData.type,
         category: formData.category,
-        status: 'draft',
+        status: 'draft' as const,
         priority: formData.priority,
-        authorId: currentUser.id,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        dueDate: formData.dueDate || undefined,
-        correspondent: formData.correspondent || undefined,
-        fileSize: Math.floor(Math.random() * 5000000),
-        fileName: `${formData.title.toLowerCase().replace(/\s+/g, '_')}.pdf`,
-        tags: formData.tags.split(',').map(t => t.trim()).filter(Boolean),
+        authorId: user?.id || 1,
+        correspondent: formData.correspondent,
+        dueDate: formData.dueDate,
+        file_size: 0,
+        file_name: '',
+        tags: [],
+        version: 1,
         comments: [],
         history: [{
-          id: Math.random().toString(36).slice(2),
+          id: Date.now().toString(),
+          userId: user?.id || 1,
           action: 'created',
-          userId: currentUser.id,
-          createdAt: new Date().toISOString(),
           details: 'Документ создан',
+          created_at: new Date().toISOString()
         }],
         approvals: [],
-        version: 1,
-        relatedIds: [],
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       };
 
       setDocuments(prev => [newDoc, ...prev]);
-      setUploading(false);
       onClose();
-    }, 500);
+    } catch (error) {
+      console.error('Ошибка создания:', error);
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in">
       <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-bold text-gray-900">Создать документ</h2>
-            <p className="text-sm text-gray-500 mt-1">Заполните информацию о документе</p>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl gradient-blue flex items-center justify-center">
+              <FileText size={20} className="text-white" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Создать документ</h2>
+              <p className="text-sm text-gray-500">Заполните информацию о документе</p>
+            </div>
           </div>
-          <button
-            onClick={onClose}
-            className="w-10 h-10 rounded-xl hover:bg-gray-100 flex items-center justify-center transition"
-          >
+          <button onClick={onClose} className="w-10 h-10 rounded-xl hover:bg-gray-100 flex items-center justify-center transition">
             <X size={20} />
           </button>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          {/* Title */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Название документа *
+              Название документа <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              className={`w-full h-11 px-4 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition ${
+                errors.title ? 'border-red-300 bg-red-50' : 'border-gray-300'
+              }`}
               placeholder="Введите название документа"
-              className="w-full h-11 px-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
-              required
+            />
+            {errors.title && <p className="mt-1 text-xs text-red-600">{errors.title}</p>}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Описание</label>
+            <textarea
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              rows={4}
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition resize-none"
+              placeholder="Опишите документ..."
             />
           </div>
 
-          {/* Type and Category */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Тип документа
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Тип документа</label>
               <select
                 value={formData.type}
-                onChange={(e) => setFormData({ ...formData, type: e.target.value as DocType })}
-                className="w-full h-11 px-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
+                onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
+                className="w-full h-11 px-4 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
               >
-                <option value="incoming">Входящий</option>
-                <option value="outgoing">Исходящий</option>
-                <option value="internal">Внутренний</option>
+                <option value="incoming">📥 Входящий</option>
+                <option value="outgoing">📤 Исходящий</option>
+                <option value="internal">📄 Внутренний</option>
               </select>
             </div>
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Категория
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Категория</label>
               <select
                 value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value as DocCategory })}
-                className="w-full h-11 px-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
+                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                className="w-full h-11 px-4 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
               >
                 <option value="Договор">Договор</option>
                 <option value="Счёт">Счёт</option>
@@ -139,91 +165,43 @@ export default function CreateDocumentModal({ onClose }: Props) {
             </div>
           </div>
 
-          {/* Description */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Описание
-            </label>
-            <textarea
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Опишите документ..."
-              rows={4}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition resize-none"
-            />
-          </div>
-
-          {/* Correspondent */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Корреспондент
-            </label>
-            <input
-              type="text"
-              value={formData.correspondent}
-              onChange={(e) => setFormData({ ...formData, correspondent: e.target.value })}
-              placeholder="Название организации или ФИО"
-              className="w-full h-11 px-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
-            />
-          </div>
-
-          {/* Priority and Due Date */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Приоритет
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Приоритет</label>
               <select
                 value={formData.priority}
-                onChange={(e) => setFormData({ ...formData, priority: e.target.value as TaskPriority })}
-                className="w-full h-11 px-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
+                onChange={(e) => setFormData({ ...formData, priority: e.target.value as any })}
+                className="w-full h-11 px-4 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
               >
-                <option value="low">Низкий</option>
-                <option value="normal">Обычный</option>
-                <option value="high">Высокий</option>
-                <option value="critical">Критичный</option>
+                <option value="low">⚪ Низкий</option>
+                <option value="normal">🔵 Обычный</option>
+                <option value="high">🟠 Высокий</option>
+                <option value="critical">🔴 Критичный</option>
               </select>
             </div>
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Срок исполнения
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Срок исполнения</label>
               <input
                 type="date"
                 value={formData.dueDate}
                 onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                className="w-full h-11 px-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
+                className="w-full h-11 px-4 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
               />
             </div>
           </div>
 
-          {/* Tags */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Теги (через запятую)
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Корреспондент</label>
             <input
               type="text"
-              value={formData.tags}
-              onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-              placeholder="договор, поставка, 2024"
-              className="w-full h-11 px-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
+              value={formData.correspondent}
+              onChange={(e) => setFormData({ ...formData, correspondent: e.target.value })}
+              className="w-full h-11 px-4 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
+              placeholder="Название организации или ФИО"
             />
           </div>
 
-          {/* File Upload (Demo) */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Прикрепить файл (демо)
-            </label>
-            <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-500 transition cursor-pointer">
-              <Upload size={32} className="mx-auto text-gray-400 mb-2" />
-              <p className="text-sm text-gray-600">Нажмите для загрузки файла</p>
-              <p className="text-xs text-gray-400 mt-1">PDF, DOC, DOCX до 50 МБ</p>
-            </div>
-          </div>
-
-          {/* Actions */}
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
             <button
               type="button"
@@ -234,10 +212,10 @@ export default function CreateDocumentModal({ onClose }: Props) {
             </button>
             <button
               type="submit"
-              disabled={uploading || !formData.title.trim()}
-              className="btn-primary px-6 py-2.5 rounded-xl text-white text-sm font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isCreating}
+              className="btn-primary px-6 py-2.5 rounded-xl text-white text-sm font-medium flex items-center gap-2 disabled:opacity-50"
             >
-              {uploading ? (
+              {isCreating ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                   Создание...
