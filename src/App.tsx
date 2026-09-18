@@ -7,6 +7,7 @@ import LoginScreen from './components/LoginScreen';
 import HomePage from './pages/HomePage';
 import Documents from './pages/Documents';
 import DocumentCard from './pages/DocumentCard';
+import DocumentEditForm from './pages/DocumentEditForm';
 import Tasks from './pages/Tasks';
 import Meetings from './pages/Meetings';
 import Registry from './pages/Registry';
@@ -324,6 +325,7 @@ function AppContent() {
             <Route index element={<HomePage />} />
             <Route path="documents" element={<Documents />} />
             <Route path="documents/:id" element={<DocumentCard />} />
+            <Route path="documents/:id/edit" element={<DocumentEditForm />} />
             <Route path="tasks" element={<Tasks />} />
             <Route path="meetings" element={<Meetings />} />
             <Route path="registry" element={<Registry />} />

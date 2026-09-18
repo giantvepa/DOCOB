@@ -313,9 +313,12 @@ export default function DocumentCard() {
                 
                 {showActions && (
                   <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-200 py-2 z-50 animate-fade-in">
-                    <button className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 w-full transition">
+                    <Link 
+                      to={`/documents/${doc.id}/edit`}
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 w-full transition"
+                    >
                       <Edit3 size={16} /> Редактировать
-                    </button>
+                    </Link>
                     <button className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 w-full transition">
                       <Copy size={16} /> Дублировать
                     </button>
