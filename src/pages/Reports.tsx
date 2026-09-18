@@ -82,7 +82,7 @@ export default function Reports() {
           <div className="space-y-3">
             {Object.entries(stats.byAuthor).sort((a, b) => b[1] - a[1]).map(([authorId, count]) => {
               const author = employees.find(e => String(e.id) === String(authorId));
-              const authorName = author?.name || `${author?.first_name || ''} ${author?.last_name || ''}`.trim() || author?.username || author?.email || 'Неизвестно';
+              const authorName = author ? (author.name || `${author.first_name || ''} ${author.last_name || ''}`.trim() || author.username || author.email || 'Неизвестно') : 'Неизвестно';
               return (
                 <div key={authorId} className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
