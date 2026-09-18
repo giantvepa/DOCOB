@@ -106,28 +106,28 @@ export default function Layout() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Modern Header */}
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center px-6 gap-4">
+        <header className="h-16 bg-white border-b border-gray-200 flex items-center px-6 gap-4 shadow-sm">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="lg:hidden w-10 h-10 rounded-lg hover:bg-gray-100 flex items-center justify-center"
+            className="lg:hidden w-10 h-10 rounded-lg hover:bg-gray-100 flex items-center justify-center transition"
           >
             <Menu size={20} />
           </button>
 
           {/* Search */}
-          <div className="flex-1 max-w-md">
+          <div className="flex-1 max-w-2xl">
             <div className="relative">
-              <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
                 placeholder={t('toolbar.search')}
-                className="w-full h-10 pl-10 pr-4 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
+                className="w-full h-11 pl-11 pr-4 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
               />
             </div>
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             {/* Language Switcher */}
             <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
               <Globe size={16} className="text-gray-500 ml-2" />
@@ -150,10 +150,10 @@ export default function Layout() {
             </div>
 
             {/* Notifications */}
-            <button className="relative w-10 h-10 rounded-xl hover:bg-gray-100 flex items-center justify-center transition">
+            <button className="relative w-11 h-11 rounded-xl hover:bg-gray-100 flex items-center justify-center transition">
               <Bell size={20} className="text-gray-600" />
               {(pendingCount + myTasksCount) > 0 && (
-                <span className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                <span className="absolute top-1.5 right-1.5 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center shadow-lg">
                   {pendingCount + myTasksCount}
                 </span>
               )}
@@ -163,27 +163,33 @@ export default function Layout() {
             <div className="relative">
               <button
                 onClick={() => setProfileOpen(!profileOpen)}
-                className="flex items-center gap-2 h-10 px-3 rounded-xl hover:bg-gray-100 transition"
+                className="flex items-center gap-3 h-11 px-3 rounded-xl hover:bg-gray-100 transition"
               >
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-xs font-bold">
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold shadow-md">
                   {authUser?.avatar || '👤'}
+                </div>
+                <div className="hidden md:block text-left">
+                  <p className="text-sm font-medium text-gray-900">
+                    {authUser?.first_name || authUser?.username || 'Пользователь'}
+                  </p>
+                  <p className="text-xs text-gray-500">{authUser?.position || ''}</p>
                 </div>
                 <ChevronDown size={16} className="text-gray-400" />
               </button>
               {profileOpen && (
-                <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50">
+                <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-200 py-2 z-50 animate-fade-in">
                   <div className="px-4 py-3 border-b border-gray-100">
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-sm font-semibold text-gray-900">
                       {authUser?.first_name || authUser?.username || 'Пользователь'}
                     </p>
-                    <p className="text-xs text-gray-500">{authUser?.email}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{authUser?.email}</p>
                   </div>
-                  <Link to="/reports" onClick={() => setProfileOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                    <Settings size={16} /> {t('nav.settings')}
+                  <Link to="/reports" onClick={() => setProfileOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition">
+                    <Settings size={16} className="text-gray-500" /> {t('nav.settings')}
                   </Link>
                   <button 
                     onClick={() => { setProfileOpen(false); logout(); }}
-                    className="flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full"
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 w-full transition"
                   >
                     <LogOut size={16} /> Выйти
                   </button>
