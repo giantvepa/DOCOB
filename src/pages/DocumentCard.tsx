@@ -368,75 +368,193 @@ export default function DocumentCard() {
         {/* Main Info Tab */}
         {activeTab === 'main' && (
           <div className="space-y-6">
-            <div>
-              <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <FileText size={16} className="text-blue-600" />
-                Реквизиты документа
-              </h3>
-              <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <label className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Регистрационный номер</label>
-                  <p className="text-sm font-medium text-gray-900 mt-1">{doc.number}</p>
-                </div>
-                <div>
-                  <label className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Дата регистрации</label>
-                  <p className="text-sm font-medium text-gray-900 mt-1">{fmtDateShort(doc.createdAt)}</p>
-                </div>
-                <div>
-                  <label className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Категория</label>
-                  <p className="text-sm font-medium text-gray-900 mt-1">{doc.category}</p>
-                </div>
-                <div>
-                  <label className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Корреспондент</label>
-                  <p className="text-sm font-medium text-gray-900 mt-1">{doc.correspondent || '—'}</p>
-                </div>
-                <div>
-                  <label className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Автор</label>
-                  <div className="flex items-center gap-2 mt-1">
-                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-xs font-bold">
-                      {author?.avatar || (author?.first_name || author?.name || '?').charAt(0)}
-                    </div>
-                    <span className="text-sm font-medium text-gray-900">
-                      {author ? `${author.first_name || author.name || ''} ${author.last_name || ''}`.trim() : '—'}
-                    </span>
-                  </div>
-                </div>
-                <div>
-                  <label className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Подразделение</label>
-                  <p className="text-sm font-medium text-gray-900 mt-1">{author?.department || '—'}</p>
-                </div>
-                <div>
-                  <label className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Срок исполнения</label>
-                  <p className="text-sm font-medium text-gray-900 mt-1">
-                    {doc.dueDate || doc.due_date ? fmtDateShort(doc.dueDate || doc.due_date) : '—'}
+            {/* Основная информация */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Левая колонка - Основная информация */}
+              <div className="lg:col-span-2 space-y-6">
+                {/* Описание документа */}
+                <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-5 border border-blue-100">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <FileText size={16} className="text-blue-600" />
+                    Описание документа
+                  </h3>
+                  <p className="text-sm text-gray-700 leading-relaxed">
+                    {doc.description || 'Описание отсутствует'}
                   </p>
                 </div>
+
+                {/* Регистрационные сведения */}
                 <div>
-                  <label className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Последнее изменение</label>
-                  <p className="text-sm font-medium text-gray-900 mt-1">{fmtDate(doc.updatedAt)}</p>
+                  <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <Calendar size={16} className="text-green-600" />
+                    Регистрационные сведения
+                  </h3>
+                  <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+                    <div className="flex items-center justify-between pb-3 border-b border-gray-200">
+                      <span className="text-xs text-gray-500 font-medium">Регистрационный номер</span>
+                      <span className="text-sm font-semibold text-gray-900">{doc.number}</span>
+                    </div>
+                    <div className="flex items-center justify-between pb-3 border-b border-gray-200">
+                      <span className="text-xs text-gray-500 font-medium">Дата регистрации</span>
+                      <span className="text-sm font-medium text-gray-900">{fmtDateShort(doc.createdAt)}</span>
+                    </div>
+                    <div className="flex items-center justify-between pb-3 border-b border-gray-200">
+                      <span className="text-xs text-gray-500 font-medium">Тип документа</span>
+                      <span className="text-sm font-medium text-gray-900">
+                        {doc.type === 'incoming' ? '📥 Входящий' : doc.type === 'outgoing' ? '📤 Исходящий' : '📄 Внутренний'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between pb-3 border-b border-gray-200">
+                      <span className="text-xs text-gray-500 font-medium">Категория</span>
+                      <span className="text-sm font-medium text-gray-900">{doc.category}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-gray-500 font-medium">Версия</span>
+                      <span className="text-sm font-medium text-gray-900">v{doc.version || 1}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Сроки и приоритет */}
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <Clock size={16} className="text-amber-600" />
+                    Сроки и приоритет
+                  </h3>
+                  <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+                    <div className="flex items-center justify-between pb-3 border-b border-gray-200">
+                      <span className="text-xs text-gray-500 font-medium">Приоритет</span>
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${priorityConf.bg} ${priorityConf.color}`}>
+                        {priorityConf.label}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between pb-3 border-b border-gray-200">
+                      <span className="text-xs text-gray-500 font-medium">Срок исполнения</span>
+                      <span className="text-sm font-medium text-gray-900">
+                        {doc.dueDate || doc.due_date ? (
+                          <span className="flex items-center gap-2">
+                            {new Date(doc.dueDate || doc.due_date) < new Date() && doc.status !== 'executed' && doc.status !== 'signed' && (
+                              <AlertCircle size={14} className="text-red-500" />
+                            )}
+                            {fmtDateShort(doc.dueDate || doc.due_date)}
+                          </span>
+                        ) : '—'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-gray-500 font-medium">Последнее изменение</span>
+                      <span className="text-sm font-medium text-gray-900">{fmtDate(doc.updatedAt)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Теги */}
+                {doc.tags && doc.tags.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                      <Tag size={16} className="text-purple-600" />
+                      Теги
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {doc.tags.map(tag => (
+                        <span key={tag} className="px-3 py-1.5 bg-purple-50 text-purple-700 rounded-full text-xs font-medium hover:bg-purple-100 transition cursor-pointer">
+                          #{tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Правая колонка - Автор и Корреспондент */}
+              <div className="space-y-6">
+                {/* Информация об авторе */}
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <User size={16} className="text-blue-600" />
+                    Автор документа
+                  </h3>
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-5 border border-blue-100">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-xl font-bold shadow-lg">
+                        {author?.avatar || (author?.first_name || author?.name || '?').charAt(0)}
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900">
+                          {author ? `${author.first_name || author.name || ''} ${author.last_name || ''}`.trim() : 'Неизвестно'}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-0.5">{author?.position || '—'}</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2 pt-3 border-t border-blue-200">
+                      <div className="flex items-center gap-2 text-xs text-gray-600">
+                        <Building2 size={12} className="text-gray-400" />
+                        <span>{author?.department || '—'}</span>
+                      </div>
+                      {author?.email && (
+                        <div className="flex items-center gap-2 text-xs text-gray-600">
+                          <MessageSquare size={12} className="text-gray-400" />
+                          <span>{author.email}</span>
+                        </div>
+                      )}
+                      {author?.phone && (
+                        <div className="flex items-center gap-2 text-xs text-gray-600">
+                          <User size={12} className="text-gray-400" />
+                          <span>{author.phone}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Информация о корреспонденте */}
+                {doc.correspondent && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                      <Building2 size={16} className="text-green-600" />
+                      Корреспондент
+                    </h3>
+                    <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-5 border border-green-100">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center shadow-lg">
+                          <Building2 size={20} className="text-white" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900">{doc.correspondent}</p>
+                          <p className="text-xs text-gray-500 mt-0.5">Организация</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Быстрые действия */}
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <Check size={16} className="text-purple-600" />
+                    Быстрые действия
+                  </h3>
+                  <div className="space-y-2">
+                    <button className="w-full flex items-center gap-3 p-3 bg-gray-50 hover:bg-gray-100 rounded-xl transition text-left">
+                      <Download size={16} className="text-blue-600" />
+                      <span className="text-sm font-medium text-gray-900">Скачать документ</span>
+                    </button>
+                    <button className="w-full flex items-center gap-3 p-3 bg-gray-50 hover:bg-gray-100 rounded-xl transition text-left">
+                      <Printer size={16} className="text-green-600" />
+                      <span className="text-sm font-medium text-gray-900">Печать</span>
+                    </button>
+                    <button className="w-full flex items-center gap-3 p-3 bg-gray-50 hover:bg-gray-100 rounded-xl transition text-left">
+                      <Share2 size={16} className="text-purple-600" />
+                      <span className="text-sm font-medium text-gray-900">Поделиться</span>
+                    </button>
+                    <button className="w-full flex items-center gap-3 p-3 bg-gray-50 hover:bg-gray-100 rounded-xl transition text-left">
+                      <Copy size={16} className="text-amber-600" />
+                      <span className="text-sm font-medium text-gray-900">Дублировать</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
-
-            <div>
-              <label className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Описание</label>
-              <p className="text-sm text-gray-700 mt-1 leading-relaxed">{doc.description || '—'}</p>
-            </div>
-
-            {doc.tags && doc.tags.length > 0 && (
-              <div>
-                <label className="text-xs text-gray-500 uppercase tracking-wider font-semibold flex items-center gap-1">
-                  <Tag size={12} /> Теги
-                </label>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {doc.tags.map(tag => (
-                    <span key={tag} className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         )}
 
